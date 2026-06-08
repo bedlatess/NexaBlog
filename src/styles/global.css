@@ -482,6 +482,21 @@ h3 {
   line-height: 1.5;
 }
 
+.prose pre.has-line-numbers {
+  counter-reset: line;
+}
+
+.prose pre.has-line-numbers .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 1.5rem;
+  margin-right: var(--space-4);
+  text-align: right;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.9em;

@@ -49,3 +49,13 @@ export function getAllTags(posts: BlogPost[]) {
     .map(([label, count]) => ({ label, count, slug: tagSlug(label) }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
+
+export function getWordCount(body: string) {
+  const text = body
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const cjk = (text.match(/[一-鿿]/g) ?? []).length;
+  return words + cjk;
+}

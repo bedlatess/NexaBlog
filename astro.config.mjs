@@ -13,7 +13,14 @@ export default defineConfig({
         light: "github-light",
         dark: "github-dark"
       },
-      wrap: true
+      wrap: true,
+      transformers: [
+        {
+          pre(node) {
+            this.addClassToHast(node, 'has-line-numbers');
+          }
+        }
+      ]
     }
   },
   vite: {
