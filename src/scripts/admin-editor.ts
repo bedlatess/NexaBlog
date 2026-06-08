@@ -58,6 +58,38 @@ function generateDraftSlug() {
   return `draft-${stamp}`;
 }
 
+function getNextSlug(baseSlug: string, takenSlugs: string[]) {
+  const taken = new Set(takenSlugs);
+  if (!taken.has(baseSlug)) return baseSlug;
+
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${baseSlug}-${index}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+
+  return `${baseSlug}-${Date.now()}`;
+}
+
+async function getAvailableSlug(baseSlug: string) {
+  if (!supabase) return baseSlug;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("slug")
+    .or(`slug.eq.${baseSlug},slug.like.${baseSlug}-%`);
+
+  if (error) {
+    setDebug(`检查 slug 是否重复失败：${error.message}`);
+    return baseSlug;
+  }
+
+  return getNextSlug(baseSlug, (data ?? []).map((post) => post.slug));
+}
+
+function isDuplicateSlugError(error: { code?: string; message?: string }) {
+  return error.code === "23505" || error.message?.includes("posts_slug_key");
+}
+
 function fieldValue(field: HTMLInputElement | HTMLTextAreaElement | null) {
   return field?.value ?? "";
 }
@@ -130,23 +162,23 @@ form?.addEventListener("submit", async (event) => {
   }
 
   const isCreating = !postId;
-  const slug = trimmedFieldValue(fields.slug) || (isCreating ? generateDraftSlug() : "");
+  const requestedSlug = trimmedFieldValue(fields.slug) || (isCreating ? generateDraftSlug() : "");
   const title = trimmedFieldValue(fields.title) || (isCreating ? "未命名草稿" : "");
   const description = trimmedFieldValue(fields.description) || (isCreating ? "从后台创建的草稿。" : "");
   if (isCreating) {
-    if (fields.slug && !trimmedFieldValue(fields.slug)) fields.slug.value = slug;
+    if (fields.slug && !trimmedFieldValue(fields.slug)) fields.slug.value = requestedSlug;
     if (fields.title && !trimmedFieldValue(fields.title)) fields.title.value = title;
     if (fields.description && !trimmedFieldValue(fields.description)) fields.description.value = description;
     updatePreview();
   }
-  if (!slug || !title || !description) {
+  if (!requestedSlug || !title || !description) {
     setMessage("请填写 slug、标题和摘要。", "error");
     setDebug("表单校验未通过：slug、标题、摘要为必填。");
     return;
   }
-  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(slug)) {
+  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(requestedSlug)) {
     setMessage("Slug 只能使用小写英文、数字和连字符，例如 first-live-post。", "error");
-    setDebug(`表单校验未通过：slug "${slug}" 格式不合法。`);
+    setDebug(`表单校验未通过：slug "${requestedSlug}" 格式不合法。`);
     fields.slug?.focus();
     return;
   }
@@ -169,6 +201,11 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const isDraft = fields.draft?.checked ?? true;
+    const slug = isCreating ? await getAvailableSlug(requestedSlug) : requestedSlug;
+    if (isCreating && slug !== requestedSlug) {
+      if (fields.slug) fields.slug.value = slug;
+      setDebug(`slug "${requestedSlug}" 已存在，自动改为 "${slug}"。`);
+    }
     const payload = {
       slug,
       title,
@@ -189,12 +226,16 @@ form?.addEventListener("submit", async (event) => {
     const { data, error } = await query;
 
     if (error) {
-      setMessage(`${error.message}${error.code ? ` (${error.code})` : ""}`, "error");
+      if (isDuplicateSlugError(error)) {
+        setMessage("这个 Slug 已经被另一篇文章使用，请换一个，或让系统新建时自动追加编号。", "error");
+      } else {
+        setMessage(`${error.message}${error.code ? ` (${error.code})` : ""}`, "error");
+      }
       setDebug(`Supabase 写入失败：${error.message}${error.code ? ` (${error.code})` : ""}`);
       return;
     }
 
-    setMessage("保存成功。", "success");
+    setMessage(slug === requestedSlug ? "保存成功。" : `保存成功，Slug 已自动改为 ${slug}。`, "success");
     setDebug(`Supabase 写入成功，id=${data?.id ?? postId ?? "unknown"}。`);
     currentPost = data as AdminPost;
     if (!postId && data?.id) {
