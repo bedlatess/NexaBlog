@@ -28,12 +28,16 @@ const { mode } = Astro.props;
       <span class="label">正文 Markdown</span>
       <div class="admin-editor-toolbar" aria-label="Markdown 快捷工具">
         <button class="toolbar-button" type="button" data-markdown-insert="heading">H2</button>
+        <button class="toolbar-button" type="button" data-markdown-insert="heading3">H3</button>
         <button class="toolbar-button" type="button" data-markdown-insert="bold">B</button>
+        <button class="toolbar-button" type="button" data-markdown-insert="strike">S</button>
         <button class="toolbar-button" type="button" data-markdown-insert="link">Link</button>
         <button class="toolbar-button" type="button" data-markdown-insert="quote">Quote</button>
         <button class="toolbar-button" type="button" data-markdown-insert="list">List</button>
+        <button class="toolbar-button" type="button" data-markdown-insert="ordered-list">1.</button>
         <button class="toolbar-button" type="button" data-markdown-insert="code">Code</button>
         <button class="toolbar-button" type="button" data-markdown-insert="image">Image</button>
+        <button class="toolbar-button" type="button" data-markdown-insert="hr">HR</button>
       </div>
       <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
     </label>

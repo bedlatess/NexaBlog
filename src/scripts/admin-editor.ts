@@ -321,7 +321,9 @@ function getMarkdownSnippet(action: string, selection: string) {
 
   const snippets: Record<string, string> = {
     heading: `## ${inline}`,
+    heading3: `### ${inline}`,
     bold: `**${inline}**`,
+    strike: `~~${inline}~~`,
     link: `[${inline}](https://example.com)`,
     quote: selected
       ? selected.split("\n").map((line) => `> ${line}`).join("\n")
@@ -329,10 +331,14 @@ function getMarkdownSnippet(action: string, selection: string) {
     list: selected
       ? selected.split("\n").map((line) => `- ${line || "列表项"}`).join("\n")
       : "- 列表项",
+    "ordered-list": selected
+      ? selected.split("\n").map((line, index) => `${index + 1}. ${line || "列表项"}`).join("\n")
+      : "1. 列表项",
     code: selected.includes("\n")
       ? `\`\`\`\n${selected}\n\`\`\``
       : `\`${inline}\``,
-    image: `![图片描述](https://example.com/image.jpg)`
+    image: `![图片描述](https://example.com/image.jpg)`,
+    hr: "---"
   };
 
   return snippets[action] ?? selected;
@@ -347,7 +353,7 @@ function insertMarkdown(action: string) {
   const value = textarea.value;
   const selection = value.slice(start, end);
   const snippet = getMarkdownSnippet(action, selection);
-  const needsLeadingBreak = start > 0 && value[start - 1] !== "\n" && /^(## |>|- |```)/.test(snippet);
+  const needsLeadingBreak = start > 0 && value[start - 1] !== "\n" && /^(## |### |>|- |\d+\. |```|---)/.test(snippet);
   const prefix = needsLeadingBreak ? "\n" : "";
   const nextValue = `${value.slice(0, start)}${prefix}${snippet}${value.slice(end)}`;
   const cursor = start + prefix.length + snippet.length;
@@ -364,6 +370,7 @@ function insertMarkdown(action: string) {
 function renderInlineMarkdown(value: string) {
   return escapeHtml(value)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>")
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
@@ -377,11 +384,14 @@ function renderMarkdownPreview(markdown: string) {
   let inCodeBlock = false;
   let codeLines: string[] = [];
   let listLines: string[] = [];
+  let listType: "ul" | "ol" | null = null;
 
   const flushList = () => {
     if (!listLines.length) return;
-    blocks.push(`<ul>${listLines.map((line) => `<li>${renderInlineMarkdown(line)}</li>`).join("")}</ul>`);
+    const tag = listType ?? "ul";
+    blocks.push(`<${tag}>${listLines.map((line) => `<li>${renderInlineMarkdown(line)}</li>`).join("")}</${tag}>`);
     listLines = [];
+    listType = null;
   };
 
   const flushCode = () => {
@@ -413,6 +423,19 @@ function renderMarkdownPreview(markdown: string) {
       continue;
     }
 
+    if (/^---+$/.test(line.trim())) {
+      flushList();
+      blocks.push("<hr />");
+      continue;
+    }
+
+    const imageMatch = line.trim().match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+|\/[^)\s]+)(?:\s+"[^"]*")?\)$/);
+    if (imageMatch) {
+      flushList();
+      blocks.push(`<figure><img src="${escapeHtml(imageMatch[2])}" alt="${escapeHtml(imageMatch[1])}" loading="lazy" />${imageMatch[1] ? `<figcaption>${escapeHtml(imageMatch[1])}</figcaption>` : ""}</figure>`);
+      continue;
+    }
+
     if (line.startsWith("### ")) {
       flushList();
       blocks.push(`<h3>${renderInlineMarkdown(line.slice(4))}</h3>`);
@@ -438,7 +461,17 @@ function renderMarkdownPreview(markdown: string) {
     }
 
     if (line.startsWith("- ")) {
+      if (listType === "ol") flushList();
+      listType = "ul";
       listLines.push(line.slice(2));
+      continue;
+    }
+
+    const orderedListMatch = line.match(/^\d+\.\s+(.+)$/);
+    if (orderedListMatch) {
+      if (listType === "ul") flushList();
+      listType = "ol";
+      listLines.push(orderedListMatch[1]);
       continue;
     }
 

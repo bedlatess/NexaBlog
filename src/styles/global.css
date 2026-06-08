@@ -955,8 +955,11 @@ h3 {
 .admin-preview-body h3,
 .admin-preview-body p,
 .admin-preview-body ul,
+.admin-preview-body ol,
 .admin-preview-body blockquote,
-.admin-preview-body pre {
+.admin-preview-body pre,
+.admin-preview-body figure,
+.admin-preview-body hr {
   margin: 0;
 }
 
@@ -968,8 +971,35 @@ h3 {
   font-size: 1.1rem;
 }
 
-.admin-preview-body ul {
+.admin-preview-body ul,
+.admin-preview-body ol {
   padding-left: 1.25rem;
+}
+
+.admin-preview-body li + li {
+  margin-top: var(--space-1);
+}
+
+.admin-preview-body figure {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-preview-body img {
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.admin-preview-body figcaption {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.admin-preview-body hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .admin-preview-body blockquote {
