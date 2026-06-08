@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { loadLocalEnv } from "./load-local-env.mjs";
 
 loadLocalEnv();
@@ -13,36 +12,38 @@ function fail(msg) {
 if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_ANON_KEY) fail("Missing Supabase env vars.");
 if (!GITHUB_TOKEN || !GITHUB_REPOSITORY) fail("Missing GITHUB_TOKEN or GITHUB_REPOSITORY.");
 
-const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false }
-});
+// Fetch posts via PostgREST — no Supabase client needed, no WebSocket dep
+const res = await fetch(
+  `${PUBLIC_SUPABASE_URL}/rest/v1/posts?select=id,slug,title,description,body,tags,draft,featured,published_at,updated_at,cover_image&order=updated_at.desc`,
+  {
+    headers: {
+      apikey: PUBLIC_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${PUBLIC_SUPABASE_ANON_KEY}`
+    }
+  }
+);
 
-const { data, error } = await supabase
-  .from("posts")
-  .select("id,slug,title,description,body,tags,draft,featured,published_at,updated_at,cover_image")
-  .order("updated_at", { ascending: false });
+if (!res.ok) fail(`Supabase error ${res.status}: ${await res.text()}`);
+const posts = await res.json();
 
-if (error) fail(`Supabase error: ${error.message}`);
-
-const backup = JSON.stringify({ posts: data ?? [], exported_at: new Date().toISOString() }, null, 2);
+const backup = JSON.stringify({ posts, exported_at: new Date().toISOString() }, null, 2);
 const content = Buffer.from(backup).toString("base64");
 
 const path = "backups/posts.json";
 const [owner, repo] = GITHUB_REPOSITORY.split("/");
 const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-const headers = {
+const ghHeaders = {
   Authorization: `Bearer ${GITHUB_TOKEN}`,
   "Content-Type": "application/json",
   Accept: "application/vnd.github+json"
 };
 
-// get current sha if file exists (needed for update)
-const existing = await fetch(apiBase, { headers });
+const existing = await fetch(apiBase, { headers: ghHeaders });
 const sha = existing.ok ? (await existing.json()).sha : undefined;
 
-const res = await fetch(apiBase, {
+const put = await fetch(apiBase, {
   method: "PUT",
-  headers,
+  headers: ghHeaders,
   body: JSON.stringify({
     message: `chore: backup posts ${new Date().toISOString().split("T")[0]}`,
     content,
@@ -50,9 +51,6 @@ const res = await fetch(apiBase, {
   })
 });
 
-if (!res.ok) {
-  const body = await res.text();
-  fail(`GitHub API error ${res.status}: ${body}`);
-}
+if (!put.ok) fail(`GitHub API error ${put.status}: ${await put.text()}`);
 
-console.log(`Backed up ${(data ?? []).length} posts to ${path}`);
+console.log(`Backed up ${posts.length} posts to ${path}`);
