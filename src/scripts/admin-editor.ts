@@ -147,13 +147,106 @@ function insertMarkdown(action: string) {
   setDebug(`已插入 Markdown 片段：${action}。`);
 }
 
+function renderInlineMarkdown(value: string) {
+  return escapeHtml(value)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+}
+
+function renderMarkdownPreview(markdown: string) {
+  const source = markdown.trim();
+  if (!source) return "<p>从这里开始写 Markdown。</p>";
+
+  const blocks: string[] = [];
+  let inCodeBlock = false;
+  let codeLines: string[] = [];
+  let listLines: string[] = [];
+
+  const flushList = () => {
+    if (!listLines.length) return;
+    blocks.push(`<ul>${listLines.map((line) => `<li>${renderInlineMarkdown(line)}</li>`).join("")}</ul>`);
+    listLines = [];
+  };
+
+  const flushCode = () => {
+    blocks.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+    codeLines = [];
+  };
+
+  for (const rawLine of source.split("\n")) {
+    const line = rawLine.trimEnd();
+
+    if (line.startsWith("```")) {
+      if (inCodeBlock) {
+        flushCode();
+        inCodeBlock = false;
+      } else {
+        flushList();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(rawLine);
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushList();
+      continue;
+    }
+
+    if (line.startsWith("### ")) {
+      flushList();
+      blocks.push(`<h3>${renderInlineMarkdown(line.slice(4))}</h3>`);
+      continue;
+    }
+
+    if (line.startsWith("## ")) {
+      flushList();
+      blocks.push(`<h2>${renderInlineMarkdown(line.slice(3))}</h2>`);
+      continue;
+    }
+
+    if (line.startsWith("# ")) {
+      flushList();
+      blocks.push(`<h2>${renderInlineMarkdown(line.slice(2))}</h2>`);
+      continue;
+    }
+
+    if (line.startsWith("> ")) {
+      flushList();
+      blocks.push(`<blockquote>${renderInlineMarkdown(line.slice(2))}</blockquote>`);
+      continue;
+    }
+
+    if (line.startsWith("- ")) {
+      listLines.push(line.slice(2));
+      continue;
+    }
+
+    flushList();
+    blocks.push(`<p>${renderInlineMarkdown(line)}</p>`);
+  }
+
+  flushList();
+  if (inCodeBlock) flushCode();
+
+  return blocks.join("");
+}
+
 function updatePreview() {
   if (!preview) return;
   preview.innerHTML = `
     <p class="eyebrow">Preview</p>
     <h2>${escapeHtml(fields.title?.value || "未命名文章")}</h2>
     <p>${escapeHtml(fields.description?.value || "暂无摘要")}</p>
-    <pre style="white-space: pre-wrap">${escapeHtml(fields.body?.value || "从这里开始写 Markdown。")}</pre>
+    <div class="admin-preview-body">
+      ${renderMarkdownPreview(fields.body?.value || "")}
+    </div>
   `;
 }
 

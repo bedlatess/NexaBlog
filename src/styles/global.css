@@ -757,6 +757,49 @@ h3 {
   top: 104px;
 }
 
+.admin-preview-body {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  color: var(--color-text);
+}
+
+.admin-preview-body h2,
+.admin-preview-body h3,
+.admin-preview-body p,
+.admin-preview-body ul,
+.admin-preview-body blockquote,
+.admin-preview-body pre {
+  margin: 0;
+}
+
+.admin-preview-body h2 {
+  font-size: 1.35rem;
+}
+
+.admin-preview-body h3 {
+  font-size: 1.1rem;
+}
+
+.admin-preview-body ul {
+  padding-left: 1.25rem;
+}
+
+.admin-preview-body blockquote {
+  border-left: 3px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  padding-left: var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.admin-preview-body :not(pre) > code {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.08rem 0.3rem;
+  background: var(--color-bg-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+
 .admin-preview pre {
   overflow: auto;
   border: 1px solid var(--color-border);
