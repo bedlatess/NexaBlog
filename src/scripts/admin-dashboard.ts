@@ -18,6 +18,10 @@ const liveCounts = {
   draft: document.querySelector<HTMLElement>("[data-admin-live-count='draft']"),
   latest: document.querySelector<HTMLElement>("[data-admin-live-count='latest']")
 };
+const healthItems = new Map(
+  Array.from(document.querySelectorAll<HTMLElement>("[data-admin-health]"))
+    .map((item) => [item.dataset.adminHealth ?? "", item])
+);
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 let allPosts: AdminPost[] = [];
@@ -31,6 +35,14 @@ function setExportReady(ready: boolean) {
 
 function setImportReady(ready: boolean) {
   if (importJsonButton) importJsonButton.disabled = !ready;
+}
+
+function setHealth(key: string, state: "pending" | "ok" | "warning" | "error", detail: string) {
+  const item = healthItems.get(key);
+  if (!item) return;
+  item.dataset.state = state;
+  const value = item.querySelector("strong");
+  if (value) value.textContent = detail;
 }
 
 function setMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
@@ -209,11 +221,15 @@ async function refreshPosts() {
 
   if (error) {
     setMessage(error.message, "error");
+    setHealth("posts", "error", "读取失败");
+    setHealth("backup", "warning", "无可导出");
     return;
   }
 
   allPosts = (posts ?? []) as AdminPost[];
+  setHealth("posts", "ok", `${allPosts.length} 篇`);
   setExportReady(allPosts.length > 0);
+  setHealth("backup", allPosts.length > 0 ? "ok" : "warning", allPosts.length > 0 ? "可导出" : "暂无文章");
   filterPosts();
 }
 
@@ -396,13 +412,22 @@ if (root) {
   setExportReady(false);
   setImportReady(false);
   if (!config.configured || !supabase) {
+    setHealth("config", "error", "未配置");
+    setHealth("session", "pending", "等待配置");
+    setHealth("posts", "pending", "等待配置");
+    setHealth("backup", "pending", "等待配置");
     setMessage("Supabase 尚未配置。填写 .env 后，这里会显示真实文章数据。", "error");
   } else {
+    setHealth("config", "ok", "已配置");
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
+      setHealth("session", "error", "未登录");
+      setHealth("posts", "pending", "需登录");
+      setHealth("backup", "pending", "需登录");
       window.location.assign(`/admin/login/?next=${encodeURIComponent(window.location.pathname)}`);
     } else {
       currentUserId = data.session.user.id;
+      setHealth("session", "ok", data.session.user.email ?? "已登录");
       setImportReady(true);
       if (sessionLabel) sessionLabel.textContent = data.session.user.email ?? "已登录";
       setMessage("正在读取 Supabase 文章...");

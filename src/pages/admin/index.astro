@@ -120,6 +120,24 @@ const checks = [
           <button type="button" data-admin-post-status="draft">草稿</button>
         </div>
       </div>
+      <div class="admin-health-grid" aria-label="后台健康检查">
+        <span data-admin-health="config" data-state="pending">
+          <small>Supabase 配置</small>
+          <strong>检查中</strong>
+        </span>
+        <span data-admin-health="session" data-state="pending">
+          <small>登录会话</small>
+          <strong>检查中</strong>
+        </span>
+        <span data-admin-health="posts" data-state="pending">
+          <small>文章读取</small>
+          <strong>等待中</strong>
+        </span>
+        <span data-admin-health="backup" data-state="pending">
+          <small>备份工具</small>
+          <strong>等待中</strong>
+        </span>
+      </div>
       <div class="admin-live-stats" aria-label="Supabase 实时文章统计">
         <span>
           <small>总数</small>

@@ -765,6 +765,13 @@ h3 {
   margin-bottom: var(--space-4);
 }
 
+.admin-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
 .admin-live-stats span {
   min-width: 0;
   border: 1px solid var(--color-border);
@@ -773,7 +780,34 @@ h3 {
   background: color-mix(in srgb, var(--color-bg-secondary) 76%, transparent);
 }
 
+.admin-health-grid span {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--color-bg-secondary) 76%, transparent);
+}
+
+.admin-health-grid span[data-state="ok"] {
+  border-color: color-mix(in srgb, #059669 35%, var(--color-border));
+}
+
+.admin-health-grid span[data-state="warning"],
+.admin-health-grid span[data-state="pending"] {
+  border-color: color-mix(in srgb, #d97706 35%, var(--color-border));
+}
+
+.admin-health-grid span[data-state="error"] {
+  border-color: color-mix(in srgb, #dc2626 40%, var(--color-border));
+}
+
 .admin-live-stats small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.admin-health-grid small {
   display: block;
   color: var(--color-text-secondary);
   font-size: 0.78rem;
@@ -784,6 +818,15 @@ h3 {
   margin-top: var(--space-1);
   color: var(--color-text);
   font-size: clamp(1rem, 2.5vw, 1.25rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.admin-health-grid strong {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: clamp(0.9rem, 2vw, 1rem);
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -1219,6 +1262,10 @@ h3 {
   }
 
   .admin-live-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-health-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
