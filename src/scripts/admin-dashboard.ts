@@ -11,6 +11,8 @@ const importJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-
 const importJsonInput = document.querySelector<HTMLInputElement>("[data-admin-import-file]");
 const copyDiagnosticsButton = document.querySelector<HTMLButtonElement>("[data-admin-copy-diagnostics]");
 const searchInput = document.querySelector<HTMLInputElement>("[data-admin-post-search]");
+const tagSelect = document.querySelector<HTMLSelectElement>("[data-admin-post-tag]");
+const sortSelect = document.querySelector<HTMLSelectElement>("[data-admin-post-sort]");
 const statusButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-admin-post-status]"));
 const liveCounts = {
   total: document.querySelector<HTMLElement>("[data-admin-live-count='total']"),
@@ -26,6 +28,8 @@ const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 let allPosts: AdminPost[] = [];
 let activeStatus = "all";
+let activeTag = "all";
+let activeSort = "updated-desc";
 let currentUserId: string | null = null;
 
 function setExportReady(ready: boolean) {
@@ -69,6 +73,12 @@ function formatDateTime(value: string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function getTime(value: string | null | undefined) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
 }
 
 function getBackupStamp() {
@@ -230,6 +240,7 @@ async function refreshPosts() {
   setHealth("posts", "ok", `${allPosts.length} 篇`);
   setExportReady(allPosts.length > 0);
   setHealth("backup", allPosts.length > 0 ? "ok" : "warning", allPosts.length > 0 ? "可导出" : "暂无文章");
+  updateTagOptions();
   filterPosts();
 }
 
@@ -291,6 +302,56 @@ async function getAvailableSlug(baseSlug: string) {
   return getNextSlug(baseSlug, (data ?? []).map((post) => post.slug));
 }
 
+function getPostTags(post: AdminPost) {
+  return Array.isArray(post.tags) ? post.tags.filter(Boolean) : [];
+}
+
+function getAllLiveTags() {
+  return Array.from(new Set(allPosts.flatMap(getPostTags)))
+    .sort((left, right) => left.localeCompare(right, "zh-CN"));
+}
+
+function updateTagOptions() {
+  if (!tagSelect) return;
+  const tags = getAllLiveTags();
+  if (activeTag !== "all" && !tags.includes(activeTag)) activeTag = "all";
+  tagSelect.innerHTML = [
+    '<option value="all">全部标签</option>',
+    ...tags.map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`)
+  ].join("");
+  tagSelect.value = activeTag;
+  tagSelect.disabled = !tags.length;
+}
+
+function sortPosts(posts: AdminPost[]) {
+  return [...posts].sort((left, right) => {
+    if (activeSort === "published-desc") {
+      return getTime(right.published_at) - getTime(left.published_at);
+    }
+    if (activeSort === "title-asc") {
+      return left.title.localeCompare(right.title, "zh-CN");
+    }
+    if (activeSort === "draft-first") {
+      if (left.draft !== right.draft) return left.draft ? -1 : 1;
+      return getTime(right.updated_at) - getTime(left.updated_at);
+    }
+    return getTime(right.updated_at) - getTime(left.updated_at);
+  });
+}
+
+function getPostUrl(post: AdminPost) {
+  return `${window.location.origin}/articles/${encodeURIComponent(post.slug)}/`;
+}
+
+async function copyText(text: string, successMessage: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    setMessage(successMessage, "success");
+  } catch {
+    setMessage(`无法自动复制：${text}`, "error");
+  }
+}
+
 function renderPosts(posts: AdminPost[]) {
   if (!list) return;
   if (!posts.length) {
@@ -312,10 +373,16 @@ function renderPosts(posts: AdminPost[]) {
         <strong>${escapeHtml(post.title)}</strong>
         <small>${escapeHtml(post.slug)} · 更新 ${formatDateTime(post.updated_at)}</small>
         <small>${escapeHtml(post.description)}</small>
+        ${getPostTags(post).length ? `<span class="admin-post-tags">${getPostTags(post).map((tag) => `<em>${escapeHtml(tag)}</em>`).join("")}</span>` : ""}
       </span>
       <span class="admin-row-actions">
         <span class="status-pill ${post.draft ? "is-muted" : ""}">${post.draft ? "草稿" : "已发布"}</span>
+        ${post.featured ? '<span class="status-pill">精选</span>' : ""}
         ${post.draft ? "" : `<a class="tag" href="/articles/${encodeURIComponent(post.slug)}/">前台</a>`}
+        <button class="tag" type="button" data-admin-copy-slug="${escapeHtml(post.id)}">复制 slug</button>
+        ${post.draft ? "" : `<button class="tag" type="button" data-admin-copy-url="${escapeHtml(post.id)}">复制链接</button>`}
+        <button class="tag" type="button" data-admin-toggle-featured="${escapeHtml(post.id)}">${post.featured ? "取消精选" : "设为精选"}</button>
+        <button class="tag" type="button" data-admin-toggle-publish="${escapeHtml(post.id)}">${post.draft ? "快速发布" : "转为草稿"}</button>
         <button class="tag" type="button" data-admin-duplicate-post="${escapeHtml(post.id)}">复制为草稿</button>
         <a class="tag" href="/admin/posts/edit/?id=${encodeURIComponent(post.id)}">编辑</a>
       </span>
@@ -336,26 +403,28 @@ function updateLiveCounts() {
 
 function filterPosts() {
   const query = searchInput?.value.trim().toLowerCase() ?? "";
-  const filtered = allPosts.filter((post) => {
+  const filtered = sortPosts(allPosts.filter((post) => {
     const matchesStatus =
       activeStatus === "all"
       || (activeStatus === "draft" && post.draft)
       || (activeStatus === "published" && !post.draft);
+    const matchesTag = activeTag === "all" || getPostTags(post).includes(activeTag);
     const haystack = [
       post.title,
       post.slug,
       post.description,
       post.body,
-      ...(post.tags ?? [])
+      ...getPostTags(post)
     ].join(" ").toLowerCase();
-    return matchesStatus && (!query || haystack.includes(query));
-  });
+    return matchesStatus && matchesTag && (!query || haystack.includes(query));
+  }));
 
   updateLiveCounts();
   renderPosts(filtered);
   const publishedCount = allPosts.filter((post) => !post.draft).length;
   const draftCount = allPosts.length - publishedCount;
-  setMessage(`Supabase 文章：${filtered.length}/${allPosts.length} 篇匹配，已发布 ${publishedCount} 篇，草稿 ${draftCount} 篇。`, "success");
+  const tagText = activeTag === "all" ? "" : `，标签 ${activeTag}`;
+  setMessage(`Supabase 文章：${filtered.length}/${allPosts.length} 篇匹配${tagText}，已发布 ${publishedCount} 篇，草稿 ${draftCount} 篇。`, "success");
 }
 
 function setActiveStatus(status: string) {
@@ -364,6 +433,77 @@ function setActiveStatus(status: string) {
     button.setAttribute("aria-pressed", String(button.dataset.adminPostStatus === status));
   });
   filterPosts();
+}
+
+function replacePost(updated: AdminPost) {
+  allPosts = allPosts.map((post) => post.id === updated.id ? updated : post);
+  updateTagOptions();
+  filterPosts();
+}
+
+async function updatePost(postId: string, patch: Partial<AdminPost>, trigger: HTMLButtonElement, pendingText: string, successText: (post: AdminPost) => string) {
+  if (!supabase) return;
+  const originalText = trigger.textContent ?? "";
+  trigger.disabled = true;
+  trigger.textContent = pendingText;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .update(patch)
+    .eq("id", postId)
+    .select("*")
+    .single();
+
+  if (error) {
+    trigger.disabled = false;
+    trigger.textContent = originalText;
+    setMessage(error.message, "error");
+    return;
+  }
+
+  const updated = data as AdminPost;
+  replacePost(updated);
+  setMessage(successText(updated), "success");
+}
+
+async function togglePublish(postId: string, trigger: HTMLButtonElement) {
+  const source = allPosts.find((post) => post.id === postId);
+  if (!source) {
+    setMessage("没有找到要更新的文章，请刷新后台后重试。", "error");
+    return;
+  }
+
+  const willPublish = source.draft;
+  const confirmed = window.confirm(willPublish
+    ? `确认发布《${source.title}》？发布后会触发重新构建，前台会在 Vercel 部署完成后显示。`
+    : `确认把《${source.title}》转回草稿？前台会在重新构建后隐藏它。`);
+  if (!confirmed) return;
+
+  await updatePost(
+    postId,
+    willPublish
+      ? { draft: false, published_at: source.published_at ?? new Date().toISOString() }
+      : { draft: true, published_at: null },
+    trigger,
+    willPublish ? "发布中..." : "转草稿...",
+    (post) => willPublish ? `已发布《${post.title}》。` : `已转为草稿：《${post.title}》。`
+  );
+}
+
+async function toggleFeatured(postId: string, trigger: HTMLButtonElement) {
+  const source = allPosts.find((post) => post.id === postId);
+  if (!source) {
+    setMessage("没有找到要更新的文章，请刷新后台后重试。", "error");
+    return;
+  }
+
+  await updatePost(
+    postId,
+    { featured: !source.featured },
+    trigger,
+    source.featured ? "取消中..." : "设置中...",
+    (post) => post.featured ? `已设为精选：《${post.title}》。` : `已取消精选：《${post.title}》。`
+  );
 }
 
 async function duplicatePost(postId: string, trigger: HTMLButtonElement) {
@@ -404,6 +544,7 @@ async function duplicatePost(postId: string, trigger: HTMLButtonElement) {
   }
 
   allPosts = [data as AdminPost, ...allPosts];
+  updateTagOptions();
   setActiveStatus("draft");
   setMessage(`已复制为草稿：${data.title}。`, "success");
 }
@@ -437,6 +578,14 @@ if (root) {
 }
 
 searchInput?.addEventListener("input", filterPosts);
+tagSelect?.addEventListener("change", () => {
+  activeTag = tagSelect.value || "all";
+  filterPosts();
+});
+sortSelect?.addEventListener("change", () => {
+  activeSort = sortSelect.value || "updated-desc";
+  filterPosts();
+});
 statusButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveStatus(button.dataset.adminPostStatus ?? "all"));
 });
@@ -451,11 +600,38 @@ importJsonInput?.addEventListener("change", () => {
 });
 
 list?.addEventListener("click", (event) => {
-  const target = event.target instanceof HTMLElement
-    ? event.target.closest<HTMLButtonElement>("[data-admin-duplicate-post]")
-    : null;
-  if (!target) return;
-  void duplicatePost(target.dataset.adminDuplicatePost ?? "", target);
+  if (!(event.target instanceof HTMLElement)) return;
+
+  const copySlugButton = event.target.closest<HTMLButtonElement>("[data-admin-copy-slug]");
+  if (copySlugButton) {
+    const post = allPosts.find((item) => item.id === copySlugButton.dataset.adminCopySlug);
+    if (post) void copyText(post.slug, `已复制 slug：${post.slug}`);
+    return;
+  }
+
+  const copyUrlButton = event.target.closest<HTMLButtonElement>("[data-admin-copy-url]");
+  if (copyUrlButton) {
+    const post = allPosts.find((item) => item.id === copyUrlButton.dataset.adminCopyUrl);
+    if (post) void copyText(getPostUrl(post), `已复制前台链接：${post.slug}`);
+    return;
+  }
+
+  const featuredButton = event.target.closest<HTMLButtonElement>("[data-admin-toggle-featured]");
+  if (featuredButton) {
+    void toggleFeatured(featuredButton.dataset.adminToggleFeatured ?? "", featuredButton);
+    return;
+  }
+
+  const publishButton = event.target.closest<HTMLButtonElement>("[data-admin-toggle-publish]");
+  if (publishButton) {
+    void togglePublish(publishButton.dataset.adminTogglePublish ?? "", publishButton);
+    return;
+  }
+
+  const duplicateButton = event.target.closest<HTMLButtonElement>("[data-admin-duplicate-post]");
+  if (duplicateButton) {
+    void duplicatePost(duplicateButton.dataset.adminDuplicatePost ?? "", duplicateButton);
+  }
 });
 
 logoutButton?.addEventListener("click", async () => {

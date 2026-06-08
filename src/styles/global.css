@@ -684,7 +684,7 @@ h3 {
 
 .admin-filter-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(16rem, 1fr) minmax(9rem, 0.35fr) minmax(9rem, 0.35fr) auto;
   gap: var(--space-3);
   align-items: center;
   margin-bottom: var(--space-4);
@@ -739,6 +739,23 @@ h3 {
 .admin-row small {
   display: block;
   color: var(--color-text-secondary);
+}
+
+.admin-post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.admin-post-tags em {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.08rem 0.45rem;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-style: normal;
+  line-height: 1.6;
 }
 
 .admin-post-row {
