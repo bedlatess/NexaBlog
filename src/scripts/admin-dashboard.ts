@@ -5,6 +5,8 @@ const sessionLabel = document.querySelector<HTMLElement>("[data-admin-session]")
 const list = document.querySelector<HTMLElement>("[data-admin-live-posts]");
 const message = document.querySelector<HTMLElement>("[data-admin-live-message]");
 const logoutButton = document.querySelector<HTMLButtonElement>("[data-admin-logout]");
+const exportJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-export-json]");
+const exportMarkdownButton = document.querySelector<HTMLButtonElement>("[data-admin-export-markdown]");
 const searchInput = document.querySelector<HTMLInputElement>("[data-admin-post-search]");
 const statusButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-admin-post-status]"));
 const liveCounts = {
@@ -18,6 +20,11 @@ const supabase = createBrowserSupabase();
 let allPosts: AdminPost[] = [];
 let activeStatus = "all";
 let currentUserId: string | null = null;
+
+function setExportReady(ready: boolean) {
+  if (exportJsonButton) exportJsonButton.disabled = !ready;
+  if (exportMarkdownButton) exportMarkdownButton.disabled = !ready;
+}
 
 function setMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
   if (!message) return;
@@ -43,6 +50,79 @@ function formatDateTime(value: string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function getBackupStamp() {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function downloadTextFile(filename: string, content: string, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function yamlString(value: unknown) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function markdownFrontmatter(post: AdminPost) {
+  return [
+    "---",
+    `id: "${yamlString(post.id)}"`,
+    `slug: "${yamlString(post.slug)}"`,
+    `title: "${yamlString(post.title)}"`,
+    `description: "${yamlString(post.description)}"`,
+    `published_at: ${post.published_at ? `"${yamlString(post.published_at)}"` : "null"}`,
+    `updated_at: "${yamlString(post.updated_at)}"`,
+    `created_at: "${yamlString(post.created_at)}"`,
+    `draft: ${String(post.draft)}`,
+    `featured: ${String(post.featured)}`,
+    `tags: [${(post.tags ?? []).map((tag) => `"${yamlString(tag)}"`).join(", ")}]`,
+    "---"
+  ].join("\n");
+}
+
+function exportJsonBackup() {
+  if (!allPosts.length) {
+    setMessage("当前没有可导出的 Supabase 文章。", "error");
+    return;
+  }
+  const payload = {
+    exported_at: new Date().toISOString(),
+    post_count: allPosts.length,
+    posts: allPosts
+  };
+  downloadTextFile(
+    `nexablog-posts-${getBackupStamp()}.json`,
+    JSON.stringify(payload, null, 2),
+    "application/json;charset=utf-8"
+  );
+  setMessage(`已导出 ${allPosts.length} 篇文章 JSON 备份。`, "success");
+}
+
+function exportMarkdownBackup() {
+  if (!allPosts.length) {
+    setMessage("当前没有可导出的 Supabase 文章。", "error");
+    return;
+  }
+  const content = allPosts
+    .map((post) => [
+      `<!-- nexablog-backup: ${post.slug} -->`,
+      markdownFrontmatter(post),
+      "",
+      post.body || "",
+      ""
+    ].join("\n"))
+    .join("\n\n");
+  downloadTextFile(`nexablog-posts-${getBackupStamp()}.md`, content);
+  setMessage(`已导出 ${allPosts.length} 篇文章 Markdown 备份。`, "success");
 }
 
 function getNextSlug(baseSlug: string, takenSlugs: string[]) {
@@ -191,6 +271,7 @@ async function duplicatePost(postId: string, trigger: HTMLButtonElement) {
 }
 
 if (root) {
+  setExportReady(false);
   if (!config.configured || !supabase) {
     setMessage("Supabase 尚未配置。填写 .env 后，这里会显示真实文章数据。", "error");
   } else {
@@ -210,6 +291,7 @@ if (root) {
         setMessage(error.message, "error");
       } else {
         allPosts = (posts ?? []) as AdminPost[];
+        setExportReady(allPosts.length > 0);
         filterPosts();
       }
     }
@@ -220,6 +302,8 @@ searchInput?.addEventListener("input", filterPosts);
 statusButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveStatus(button.dataset.adminPostStatus ?? "all"));
 });
+exportJsonButton?.addEventListener("click", exportJsonBackup);
+exportMarkdownButton?.addEventListener("click", exportMarkdownBackup);
 
 list?.addEventListener("click", (event) => {
   const target = event.target instanceof HTMLElement
