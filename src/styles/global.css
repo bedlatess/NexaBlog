@@ -512,6 +512,17 @@ h3 {
   transform: scale(1.02);
 }
 
+.secondary-button {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.secondary-button:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+  color: var(--color-accent-hover);
+}
+
 .mobile-nav {
   display: none;
 }

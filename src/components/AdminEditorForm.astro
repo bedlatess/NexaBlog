@@ -49,6 +49,7 @@ const { mode } = Astro.props;
     </div>
     <div class="admin-actions">
       <button class="button" type="submit" data-admin-save>{mode === "new" ? "创建草稿" : "保存修改"}</button>
+      <button class="button secondary-button" type="button" data-admin-publish>发布文章</button>
       <a class="tag" href="/admin/">返回后台</a>
       {mode === "edit" && (
         <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>

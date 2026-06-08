@@ -5,6 +5,7 @@ const message = document.querySelector<HTMLElement>("[data-admin-editor-message]
 const debug = document.querySelector<HTMLElement>("[data-admin-editor-debug]");
 const preview = document.querySelector<HTMLElement>("[data-admin-preview]");
 const saveButton = document.querySelector<HTMLButtonElement>("[data-admin-save]");
+const publishButton = document.querySelector<HTMLButtonElement>("[data-admin-publish]");
 const localDraftPanel = document.querySelector<HTMLElement>("[data-admin-local-draft]");
 const localDraftMessage = document.querySelector<HTMLElement>("[data-admin-local-draft-message]");
 const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-restore-draft]");
@@ -46,9 +47,14 @@ function getPublicPostUrl(slug: string) {
 }
 
 function setSaving(saving: boolean) {
-  if (!saveButton) return;
-  saveButton.disabled = saving;
-  saveButton.textContent = saving ? "保存中..." : postId ? "保存修改" : "创建草稿";
+  if (saveButton) {
+    saveButton.disabled = saving;
+    saveButton.textContent = saving ? "保存中..." : postId ? "保存修改" : "创建草稿";
+  }
+  if (publishButton) {
+    publishButton.disabled = saving;
+    publishButton.textContent = saving ? "发布中..." : "发布文章";
+  }
 }
 
 function escapeHtml(value: unknown) {
@@ -461,6 +467,13 @@ discardDraftButton?.addEventListener("click", () => {
 saveButton?.addEventListener("click", () => {
   setMessage("已点击保存按钮，正在提交表单...");
   setDebug("保存按钮 click 已被主编辑模块捕获。");
+});
+publishButton?.addEventListener("click", () => {
+  if (fields.draft) fields.draft.checked = false;
+  updatePreflight();
+  setMessage("准备发布文章，正在提交表单...");
+  setDebug("发布按钮 click 已触发，已自动取消草稿状态。");
+  form?.requestSubmit();
 });
 
 form?.addEventListener("submit", async (event) => {
