@@ -58,6 +58,12 @@ const { mode } = Astro.props;
       <strong>发布链路</strong>
       <span>取消“保存为草稿”后，文章会写入 Supabase 发布状态，并自动触发 Vercel 重新构建。前台通常会在部署 Ready 后显示。</span>
     </div>
+    <div class="admin-preflight" data-admin-preflight>
+      <strong>发布前检查</strong>
+      <ul data-admin-preflight-list>
+        <li>等待输入内容。</li>
+      </ul>
+    </div>
     <div class="admin-local-draft" data-admin-local-draft hidden>
       <span data-admin-local-draft-message>发现浏览器本地草稿。</span>
       <div class="admin-row-actions">

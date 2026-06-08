@@ -9,6 +9,8 @@ const localDraftPanel = document.querySelector<HTMLElement>("[data-admin-local-d
 const localDraftMessage = document.querySelector<HTMLElement>("[data-admin-local-draft-message]");
 const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-restore-draft]");
 const discardDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-discard-draft]");
+const preflightPanel = document.querySelector<HTMLElement>("[data-admin-preflight]");
+const preflightList = document.querySelector<HTMLElement>("[data-admin-preflight-list]");
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 const params = new URLSearchParams(window.location.search);
@@ -186,6 +188,68 @@ function showLocalDraftPrompt() {
   localDraftPanel.hidden = false;
 }
 
+function getPreflightChecks() {
+  const slug = trimmedFieldValue(fields.slug);
+  const title = trimmedFieldValue(fields.title);
+  const description = trimmedFieldValue(fields.description);
+  const body = fieldValue(fields.body).trim();
+  const tags = fieldValue(fields.tags).split(",").map((tag) => tag.trim()).filter(Boolean);
+  const imageRefs = Array.from(body.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)).map((match) => match[1]);
+  const relativeImages = imageRefs.filter((src) => !/^(https?:\/\/|\/)/i.test(src));
+  const placeholderImages = imageRefs.filter((src) => src.includes("example.com"));
+  const placeholderLinks = Array.from(body.matchAll(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/g))
+    .map((match) => match[1])
+    .filter((href) => href.includes("example.com"));
+
+  return [
+    {
+      level: slug && /^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(slug) ? "ok" : "error",
+      text: slug ? "Slug 格式可发布。" : "Slug 不能为空。"
+    },
+    {
+      level: title ? "ok" : "error",
+      text: title ? "标题已填写。" : "标题不能为空。"
+    },
+    {
+      level: description ? "ok" : "error",
+      text: description ? "摘要已填写。" : "摘要不能为空。"
+    },
+    {
+      level: body.length >= 20 ? "ok" : "warning",
+      text: body.length >= 20 ? "正文长度正常。" : "正文很短，建议发布前再补充内容。"
+    },
+    {
+      level: tags.length ? "ok" : "warning",
+      text: tags.length ? `已设置 ${tags.length} 个标签。` : "尚未设置标签。"
+    },
+    {
+      level: relativeImages.length ? "error" : "ok",
+      text: relativeImages.length ? "正文包含相对图片路径，请改成 https 图片地址或 /assets/ 路径。" : "没有会阻塞构建的相对图片路径。"
+    },
+    {
+      level: placeholderImages.length || placeholderLinks.length ? "warning" : "ok",
+      text: placeholderImages.length || placeholderLinks.length ? "正文仍包含 example.com 占位链接。" : "没有 example.com 占位链接。"
+    }
+  ];
+}
+
+function updatePreflight() {
+  if (!preflightList || !preflightPanel) return;
+  const checks = getPreflightChecks();
+  preflightList.innerHTML = checks
+    .map((check) => `<li data-level="${check.level}">${escapeHtml(check.text)}</li>`)
+    .join("");
+  preflightPanel.dataset.level = checks.some((check) => check.level === "error")
+    ? "error"
+    : checks.some((check) => check.level === "warning")
+      ? "warning"
+      : "ok";
+}
+
+function getBlockingPreflightErrors() {
+  return getPreflightChecks().filter((check) => check.level === "error");
+}
+
 function getMarkdownSnippet(action: string, selection: string) {
   const selected = selection || "";
   const inline = selected.trim() || "文字";
@@ -228,6 +292,7 @@ function insertMarkdown(action: string) {
   textarea.focus();
   textarea.setSelectionRange(cursor, cursor);
   updatePreview();
+  updatePreflight();
   writeLocalDraft();
   setDebug(`已插入 Markdown 片段：${action}。`);
 }
@@ -345,6 +410,7 @@ function fill(post: AdminPost) {
   if (fields.draft) fields.draft.checked = post.draft;
   if (fields.featured) fields.featured.checked = post.featured;
   updatePreview();
+  updatePreflight();
 }
 
 async function ensureSession({ redirect = true } = {}) {
@@ -374,6 +440,7 @@ async function ensureSession({ redirect = true } = {}) {
 
 form?.addEventListener("input", () => {
   updatePreview();
+  updatePreflight();
   writeLocalDraft();
 });
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
@@ -384,6 +451,7 @@ restoreDraftButton?.addEventListener("click", () => {
   if (!snapshot) return;
   applySnapshot(snapshot);
   if (localDraftPanel) localDraftPanel.hidden = true;
+  updatePreflight();
   setMessage("已恢复浏览器本地草稿，保存前不会写入 Supabase。", "success");
 });
 discardDraftButton?.addEventListener("click", () => {
@@ -445,6 +513,12 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const isDraft = fields.draft?.checked ?? true;
+    const preflightErrors = getBlockingPreflightErrors();
+    if (!isDraft && preflightErrors.length) {
+      setMessage(`发布前检查未通过：${preflightErrors.map((item) => item.text).join("；")}`, "error");
+      setDebug("发布被发布前检查拦截。草稿保存不受影响。");
+      return;
+    }
     const slug = isCreating ? await getAvailableSlug(requestedSlug) : requestedSlug;
     if (isCreating && slug !== requestedSlug) {
       if (fields.slug) fields.slug.value = slug;
@@ -504,6 +578,7 @@ async function initEditor() {
   setDebug(`${editorVersion} 已加载。origin=${window.location.origin}`);
   setMessage("编辑器脚本已加载，正在检查 Supabase 会话...");
   updatePreview();
+  updatePreflight();
 
   if (!(await ensureSession())) return;
 

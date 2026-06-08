@@ -770,6 +770,52 @@ h3 {
   color: var(--color-text);
 }
 
+.admin-preflight {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-bg-secondary) 82%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.admin-preflight strong {
+  color: var(--color-text);
+}
+
+.admin-preflight ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.admin-preflight[data-level="ok"] {
+  border-color: color-mix(in srgb, #059669 35%, var(--color-border));
+}
+
+.admin-preflight[data-level="warning"] {
+  border-color: color-mix(in srgb, #d97706 45%, var(--color-border));
+}
+
+.admin-preflight[data-level="error"] {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--color-border));
+}
+
+.admin-preflight li[data-level="ok"] {
+  color: #059669;
+}
+
+.admin-preflight li[data-level="warning"] {
+  color: #d97706;
+}
+
+.admin-preflight li[data-level="error"] {
+  color: #dc2626;
+}
+
 .admin-local-draft {
   display: flex;
   align-items: center;
