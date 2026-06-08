@@ -168,6 +168,17 @@ const checks = [
           <li>{step}</li>
         ))}
       </ol>
+      <div class="deploy-troubleshooting">
+        <div class="admin-row-actions" style="justify-content: space-between">
+          <h3>发布失败排查</h3>
+          <button class="tag" type="button" data-admin-copy-diagnostics>复制诊断信息</button>
+        </div>
+        <ol class="admin-steps">
+          {deployment.troubleshooting.map((step) => (
+            <li>{step}</li>
+          ))}
+        </ol>
+      </div>
     </section>
 
     <section class="quiet-panel">
@@ -212,7 +223,7 @@ const checks = [
       <h2>下一步打磨方向</h2>
       <ol class="admin-steps">
         <li>接入 Supabase Storage 图片上传，减少手动复制图片 URL。</li>
-        <li>增加自动定时备份和发布失败告警。</li>
+        <li>增加自动定时备份和 Vercel 部署失败告警。</li>
         <li>把集成配置做成后台表单，减少手动改环境变量。</li>
         <li>把后台设置页接入站点配置、友链和关于页。</li>
       </ol>

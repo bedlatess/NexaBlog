@@ -748,6 +748,16 @@ h3 {
   padding-top: var(--space-4);
 }
 
+.deploy-troubleshooting {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+}
+
+.deploy-troubleshooting h3 {
+  margin: 0;
+}
+
 .admin-live-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

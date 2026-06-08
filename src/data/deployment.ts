@@ -13,6 +13,13 @@ export const deployment = {
     "Supabase trigger 会调用 Vercel Deploy Hook",
     "Vercel 构建会先同步 Supabase，再生成静态页面"
   ],
+  troubleshooting: [
+    "确认文章不是草稿，并且 published_at 已写入",
+    "打开 Vercel Deployments，确认最新部署状态为 Ready",
+    "检查构建日志是否出现 Supabase 同步、图片路径或环境变量错误",
+    "如果前台仍是旧内容，等待缓存刷新后强制刷新浏览器",
+    "如果发布 Hook 泄露或失效，在 Vercel 重新生成 Deploy Hook 并更新 Supabase trigger"
+  ],
   checks: [
     {
       label: "站点 URL",

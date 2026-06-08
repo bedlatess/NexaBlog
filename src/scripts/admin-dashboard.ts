@@ -9,6 +9,7 @@ const exportJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-
 const exportMarkdownButton = document.querySelector<HTMLButtonElement>("[data-admin-export-markdown]");
 const importJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-import-json]");
 const importJsonInput = document.querySelector<HTMLInputElement>("[data-admin-import-file]");
+const copyDiagnosticsButton = document.querySelector<HTMLButtonElement>("[data-admin-copy-diagnostics]");
 const searchInput = document.querySelector<HTMLInputElement>("[data-admin-post-search]");
 const statusButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-admin-post-status]"));
 const liveCounts = {
@@ -129,6 +130,34 @@ function exportMarkdownBackup() {
     .join("\n\n");
   downloadTextFile(`nexablog-posts-${getBackupStamp()}.md`, content);
   setMessage(`已导出 ${allPosts.length} 篇文章 Markdown 备份。`, "success");
+}
+
+function getDiagnosticsText() {
+  const publishedCount = allPosts.filter((post) => !post.draft).length;
+  const draftCount = allPosts.length - publishedCount;
+  const latest = allPosts[0];
+  return [
+    "NexaBlog diagnostics",
+    `origin: ${window.location.origin}`,
+    `path: ${window.location.pathname}`,
+    `supabase_configured: ${String(config.configured)}`,
+    `session_user: ${sessionLabel?.textContent ?? "unknown"}`,
+    `posts_total: ${allPosts.length}`,
+    `posts_published: ${publishedCount}`,
+    `posts_draft: ${draftCount}`,
+    `latest_post: ${latest ? `${latest.slug} (${latest.updated_at})` : "none"}`,
+    `checked_at: ${new Date().toISOString()}`
+  ].join("\n");
+}
+
+async function copyDiagnostics() {
+  const text = getDiagnosticsText();
+  try {
+    await navigator.clipboard.writeText(text);
+    setMessage("诊断信息已复制。", "success");
+  } catch {
+    setMessage(`无法自动复制诊断信息：${text}`, "error");
+  }
 }
 
 function isBackupPost(value: unknown): value is Partial<AdminPost> & Pick<AdminPost, "slug" | "title" | "description" | "body"> {
@@ -388,6 +417,7 @@ statusButtons.forEach((button) => {
 });
 exportJsonButton?.addEventListener("click", exportJsonBackup);
 exportMarkdownButton?.addEventListener("click", exportMarkdownBackup);
+copyDiagnosticsButton?.addEventListener("click", () => void copyDiagnostics());
 importJsonButton?.addEventListener("click", () => importJsonInput?.click());
 importJsonInput?.addEventListener("change", () => {
   const file = importJsonInput.files?.[0];
