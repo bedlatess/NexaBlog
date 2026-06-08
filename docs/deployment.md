@@ -13,9 +13,9 @@ The site works without any environment variables. Empty values keep dynamic inte
 ## Vercel
 
 1. Import the repository into Vercel.
-2. Set the build command to `npm run build`.
+2. Set the build command to `npm run build:with-supabase`.
 3. Set the output directory to `dist`.
-4. Add the public environment variables you need from `.env.example`.
+4. Add the public environment variables you need from `.env.example`, including `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY`, and `PUBLIC_ADMIN_EMAIL` when the admin is enabled.
 
 Before deploying, set a real production URL:
 

@@ -30,7 +30,12 @@ function normalizeSlug(slug) {
 
 function normalizeBody(body) {
   const value = String(body ?? "").replace(/\r\n/g, "\n");
-  return value.includes("\n") ? value : value.replace(/\\n/g, "\n");
+  const normalized = value.includes("\n") ? value : value.replace(/\\n/g, "\n");
+  return normalized.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (match, alt, src) => {
+    if (/^(https?:\/\/|\/)/i.test(src)) return match;
+    console.warn(`Skipped local image reference from Supabase post body: ${src}`);
+    return alt ? `[${alt}]` : "";
+  });
 }
 
 function toMarkdown(post) {

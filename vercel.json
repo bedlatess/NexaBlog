@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:with-supabase",
   "outputDirectory": "dist",
   "framework": "astro",
   "cleanUrls": true,
@@ -25,4 +25,3 @@
     }
   ]
 }
-

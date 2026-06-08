@@ -5,7 +5,7 @@ NexaBlog keeps the public site static. To make published Supabase posts appear w
 ## Flow
 
 1. Admin publishes or edits a public post in Supabase.
-2. A Supabase database trigger sends a `POST` request to a Vercel Deploy Hook.
+2. A Supabase database trigger uses `pg_net` to send a `POST` request to a Vercel Deploy Hook.
 3. Vercel runs `npm run build:with-supabase`.
 4. The build syncs published Supabase posts into `src/content/blog/generated/` and publishes the static site.
 
@@ -18,6 +18,8 @@ NexaBlog keeps the public site static. To make published Supabase posts appear w
 5. Open `supabase/deploy-hook-trigger.sql`.
 6. Replace `__VERCEL_DEPLOY_HOOK_URL__` with the copied Vercel hook URL.
 7. Run the SQL in the Supabase SQL editor.
+
+The SQL enables the `pg_net` extension if it is not already enabled.
 
 ## Behavior
 
