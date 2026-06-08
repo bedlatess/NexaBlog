@@ -5,10 +5,10 @@ import AdminEditorForm from "@/components/AdminEditorForm.astro";
 
 <BaseLayout title="新建文章 - NexaBlog" description="在 NexaBlog 后台创建 Supabase 草稿。">
   <section class="container admin-editor-shell">
-    <div>
+    <div class="editor-page-head">
       <p class="eyebrow">New Post</p>
       <h1>新建文章</h1>
-      <p class="hero-copy">先保存为草稿，准备好后取消草稿状态即可发布。发布会触发 Vercel 重新构建，前台在部署完成后显示。</p>
+      <p class="hero-copy">写作、预览、发布检查集中在一个工作台里。</p>
     </div>
     <AdminEditorForm mode="new" />
   </section>

@@ -5,10 +5,10 @@ import AdminEditorForm from "@/components/AdminEditorForm.astro";
 
 <BaseLayout title="编辑文章 - NexaBlog" description="编辑 Supabase 中的 NexaBlog 文章。">
   <section class="container admin-editor-shell">
-    <div>
+    <div class="editor-page-head">
       <p class="eyebrow">Edit Post</p>
       <h1>编辑文章</h1>
-      <p class="hero-copy">通过 URL 参数 `id` 读取 Supabase 文章。保存后仍停留在当前编辑页。</p>
+      <p class="hero-copy">修改内容后保存，发布状态会随 Supabase 和 Vercel 自动同步。</p>
     </div>
     <AdminEditorForm mode="edit" />
   </section>
@@ -16,4 +16,3 @@ import AdminEditorForm from "@/components/AdminEditorForm.astro";
     import "@/scripts/admin-editor";
   </script>
 </BaseLayout>
-

@@ -4,28 +4,69 @@ interface Props {
 }
 
 const { mode } = Astro.props;
+const primarySaveLabel = mode === "new" ? "创建草稿" : "保存修改";
 ---
 
-<div class="admin-editor-grid">
-  <form class="quiet-panel admin-form" data-admin-editor novalidate>
-    <label>
-      <span class="label">Slug</span>
-      <input class="admin-input" name="slug" placeholder="my-first-post" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" required />
-    </label>
-    <label>
-      <span class="label">标题</span>
-      <input class="admin-input" name="title" placeholder="文章标题" required />
-    </label>
-    <label>
-      <span class="label">摘要</span>
-      <input class="admin-input" name="description" placeholder="一句话说明这篇文章" required />
-    </label>
-    <label>
-      <span class="label">标签</span>
-      <input class="admin-input" name="tags" placeholder="Astro, Supabase, 写作" />
-    </label>
-    <label class="admin-textarea-field">
-      <span class="label">正文 Markdown</span>
+<form class="admin-editor-workbench" data-admin-editor novalidate>
+  <div class="admin-editor-main">
+    <div class="editor-command-bar">
+      <div>
+        <p class="eyebrow">Composer</p>
+        <h2>{mode === "new" ? "写一篇新文章" : "继续编辑文章"}</h2>
+        <p class="meta" data-admin-editor-message>等待 Supabase 会话。</p>
+      </div>
+      <div class="admin-actions editor-primary-actions">
+        <button class="button" type="submit" data-admin-save>{primarySaveLabel}</button>
+        <button class="button secondary-button" type="button" data-admin-publish>发布文章</button>
+        <a class="tag" href="/admin/">返回后台</a>
+        <a class="tag" href="#" data-admin-view-post hidden>查看前台</a>
+        <button class="tag" type="button" data-admin-copy-link hidden>复制链接</button>
+        {mode === "edit" && (
+          <>
+            <button class="tag warning-action" type="button" data-admin-unpublish>下线为草稿</button>
+            <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>
+          </>
+        )}
+      </div>
+    </div>
+
+    <section class="editor-meta-panel" aria-label="文章基础信息">
+      <label class="editor-field editor-field-slug">
+        <span class="label">Slug</span>
+        <input class="admin-input" name="slug" placeholder="my-first-post" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" required />
+      </label>
+      <label class="editor-field">
+        <span class="label">标题</span>
+        <input class="admin-input" name="title" placeholder="文章标题" required />
+      </label>
+      <label class="editor-field">
+        <span class="label">摘要</span>
+        <input class="admin-input" name="description" placeholder="一句话说明这篇文章" required />
+      </label>
+      <label class="editor-field">
+        <span class="label">标签</span>
+        <input class="admin-input" name="tags" placeholder="Astro, Supabase, 写作" />
+      </label>
+    </section>
+
+    <section class="editor-writing-panel" aria-label="正文编辑器">
+      <div class="editor-panel-head">
+        <div>
+          <p class="eyebrow">Markdown</p>
+          <h3>正文</h3>
+        </div>
+        <div class="admin-checks editor-checks">
+          <label class="admin-check">
+            <input name="draft" type="checkbox" checked />
+            <span>草稿</span>
+          </label>
+          <label class="admin-check">
+            <input name="featured" type="checkbox" />
+            <span>精选</span>
+          </label>
+        </div>
+      </div>
+
       <div class="admin-editor-toolbar" aria-label="Markdown 快捷工具">
         <button class="toolbar-button" type="button" data-markdown-insert="heading">H2</button>
         <button class="toolbar-button" type="button" data-markdown-insert="heading3">H3</button>
@@ -39,34 +80,43 @@ const { mode } = Astro.props;
         <button class="toolbar-button" type="button" data-markdown-insert="image">Image</button>
         <button class="toolbar-button" type="button" data-markdown-insert="hr">HR</button>
       </div>
+
       <div class="admin-image-tool" data-admin-image-tool>
+        <div class="editor-panel-head">
+          <div>
+            <p class="eyebrow">Media</p>
+            <h3>图片</h3>
+          </div>
+          <p class="meta" data-admin-image-message>可上传图片，或粘贴已有图片地址。</p>
+        </div>
         <label>
           <span class="label">图片地址</span>
-          <input class="admin-input" type="url" placeholder="https://example.com/image.jpg 或 /assets/image.jpg" data-admin-image-url />
+          <input class="admin-input" type="url" placeholder="上传后自动填入，也可粘贴 https 地址" data-admin-image-url />
         </label>
         <label>
           <span class="label">图片说明</span>
-          <input class="admin-input" type="text" placeholder="图片描述" data-admin-image-alt />
+          <input class="admin-input" type="text" placeholder="用于 alt 文本和图注" data-admin-image-alt />
         </label>
         <label class="admin-image-upload">
           <span class="label">上传图片</span>
           <input class="admin-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-file />
         </label>
-        <div class="admin-row-actions">
+        <div class="admin-row-actions editor-media-actions">
           <button class="tag" type="button" data-admin-image-upload>上传并插入</button>
           <button class="tag" type="button" data-admin-image-insert>插入图片</button>
           <button class="tag" type="button" data-admin-image-copy>复制 Markdown</button>
         </div>
-        <p class="meta" data-admin-image-message>可上传到 Supabase Storage，或手动填写 https 图片地址、站内 /assets/ 路径。</p>
       </div>
+
       <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
+
       <div class="admin-editor-metrics" aria-label="写作状态">
         <span>
-          <small>正文字符</small>
+          <small>字符</small>
           <strong data-admin-metric="chars">0</strong>
         </span>
         <span>
-          <small>预计阅读</small>
+          <small>阅读</small>
           <strong data-admin-metric="reading">1 分钟</strong>
         </span>
         <span>
@@ -74,39 +124,39 @@ const { mode } = Astro.props;
           <strong data-admin-metric="images">0 张</strong>
         </span>
         <span>
-          <small>保存状态</small>
+          <small>状态</small>
           <strong data-admin-metric="saved">未保存</strong>
         </span>
       </div>
-    </label>
-    <div class="admin-checks">
-      <label class="admin-check">
-        <input name="draft" type="checkbox" checked />
-        <span>保存为草稿</span>
-      </label>
-      <label class="admin-check">
-        <input name="featured" type="checkbox" />
-        <span>设为精选</span>
-      </label>
-    </div>
-    <div class="admin-actions">
-      <button class="button" type="submit" data-admin-save>{mode === "new" ? "创建草稿" : "保存修改"}</button>
-      <button class="button secondary-button" type="button" data-admin-publish>发布文章</button>
-      <a class="tag" href="/admin/">返回后台</a>
-      <a class="tag" href="#" data-admin-view-post hidden>查看前台</a>
-      <button class="tag" type="button" data-admin-copy-link hidden>复制链接</button>
-      {mode === "edit" && (
-        <>
-          <button class="tag warning-action" type="button" data-admin-unpublish>下线为草稿</button>
-          <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>
-        </>
-      )}
-    </div>
-    <div class="admin-publish-note" data-admin-publish-note>
+    </section>
+  </div>
+
+  <aside class="admin-editor-side">
+    <section class="quiet-panel admin-preview" data-admin-preview>
+      <p class="eyebrow">Preview</p>
+      <h2>未命名文章</h2>
+      <p>暂无摘要</p>
+      <pre style="white-space: pre-wrap">从这里开始写 Markdown。</pre>
+    </section>
+
+    <section class="editor-side-card admin-preflight" data-admin-preflight>
+      <div class="editor-panel-head">
+        <div>
+          <p class="eyebrow">Readiness</p>
+          <strong>发布检查</strong>
+        </div>
+      </div>
+      <ul data-admin-preflight-list>
+        <li>等待输入内容。</li>
+      </ul>
+    </section>
+
+    <section class="editor-side-card admin-publish-note" data-admin-publish-note>
       <strong>发布链路</strong>
-      <span>取消“保存为草稿”后，文章会写入 Supabase 发布状态，并自动触发 Vercel 重新构建。前台通常会在部署 Ready 后显示。编辑时可用 Ctrl/Cmd+S 快捷保存。</span>
-    </div>
-    <div class="admin-deploy-status" data-admin-deploy-status hidden>
+      <span>发布后会写入 Supabase，并触发 Vercel 重新构建。前台通常会在部署 Ready 后显示。编辑时可用 Ctrl/Cmd+S 快捷保存。</span>
+    </section>
+
+    <section class="admin-deploy-status" data-admin-deploy-status hidden>
       <span>
         <strong data-admin-deploy-title>等待部署</strong>
         <small data-admin-deploy-detail>发布或下线后，这里会提示下一步验收动作。</small>
@@ -115,31 +165,19 @@ const { mode } = Astro.props;
         <a class="tag" href="#" data-admin-deploy-view hidden>检查前台</a>
         <a class="tag" href="/admin/">返回后台</a>
       </div>
-    </div>
-    <div class="admin-preflight" data-admin-preflight>
-      <strong>发布前检查</strong>
-      <ul data-admin-preflight-list>
-        <li>等待输入内容。</li>
-      </ul>
-    </div>
-    <div class="admin-local-draft" data-admin-local-draft hidden>
+    </section>
+
+    <section class="admin-local-draft" data-admin-local-draft hidden>
       <span data-admin-local-draft-message>发现浏览器本地草稿。</span>
       <div class="admin-row-actions">
         <button class="tag" type="button" data-admin-restore-draft>恢复</button>
         <button class="tag danger-action" type="button" data-admin-discard-draft>丢弃</button>
       </div>
-    </div>
-    <p class="meta" data-admin-editor-message>等待 Supabase 会话。</p>
-    <p class="meta" data-admin-editor-debug>诊断：等待浏览器脚本启动。</p>
-  </form>
+    </section>
 
-  <aside class="quiet-panel admin-preview" data-admin-preview>
-    <p class="eyebrow">Preview</p>
-    <h2>未命名文章</h2>
-    <p>暂无摘要</p>
-    <pre style="white-space: pre-wrap">从这里开始写 Markdown。</pre>
+    <p class="meta editor-diagnostic-line" data-admin-editor-debug>诊断：等待浏览器脚本启动。</p>
   </aside>
-</div>
+</form>
 
 <script is:inline>
   (() => {
