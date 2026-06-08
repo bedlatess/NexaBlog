@@ -19,6 +19,11 @@ const deployStatusPanel = document.querySelector<HTMLElement>("[data-admin-deplo
 const deployStatusTitle = document.querySelector<HTMLElement>("[data-admin-deploy-title]");
 const deployStatusDetail = document.querySelector<HTMLElement>("[data-admin-deploy-detail]");
 const deployStatusLink = document.querySelector<HTMLAnchorElement>("[data-admin-deploy-view]");
+const imageUrlInput = document.querySelector<HTMLInputElement>("[data-admin-image-url]");
+const imageAltInput = document.querySelector<HTMLInputElement>("[data-admin-image-alt]");
+const insertImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-insert]");
+const copyImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-copy]");
+const imageMessage = document.querySelector<HTMLElement>("[data-admin-image-message]");
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 const params = new URLSearchParams(window.location.search);
@@ -55,6 +60,37 @@ function getPublicPostUrl(slug: string) {
 
 function getAbsolutePostUrl(slug: string) {
   return new URL(getPublicPostUrl(slug), window.location.origin).toString();
+}
+
+function isSupportedImageUrl(src: string) {
+  return /^(https?:\/\/|\/)/i.test(src);
+}
+
+function setImageMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
+  if (!imageMessage) return;
+  imageMessage.textContent = text;
+  imageMessage.dataset.tone = tone;
+}
+
+function getImageMarkdown() {
+  const src = imageUrlInput?.value.trim() ?? "";
+  const alt = imageAltInput?.value.trim() || "图片描述";
+  if (!src) {
+    setImageMessage("请先填写图片地址。", "error");
+    imageUrlInput?.focus();
+    return null;
+  }
+  if (!isSupportedImageUrl(src)) {
+    setImageMessage("图片地址必须以 https://、http:// 或 / 开头；相对路径会导致构建失败。", "error");
+    imageUrlInput?.focus();
+    return null;
+  }
+  if (src.includes("example.com")) {
+    setImageMessage("这是 example.com 占位图片，发布前请替换成真实图片。", "error");
+    imageUrlInput?.focus();
+    return null;
+  }
+  return `![${alt}](${src})`;
 }
 
 function setSaving(saving: boolean) {
@@ -259,7 +295,9 @@ function getPreflightChecks() {
   const body = fieldValue(fields.body).trim();
   const tags = fieldValue(fields.tags).split(",").map((tag) => tag.trim()).filter(Boolean);
   const imageRefs = Array.from(body.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)).map((match) => match[1]);
-  const relativeImages = imageRefs.filter((src) => !/^(https?:\/\/|\/)/i.test(src));
+  const relativeImages = imageRefs.filter((src) => !isSupportedImageUrl(src));
+  const remoteImages = imageRefs.filter((src) => /^https?:\/\//i.test(src));
+  const siteImages = imageRefs.filter((src) => src.startsWith("/"));
   const placeholderImages = imageRefs.filter((src) => src.includes("example.com"));
   const placeholderLinks = Array.from(body.matchAll(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/g))
     .map((match) => match[1])
@@ -289,6 +327,12 @@ function getPreflightChecks() {
     {
       level: relativeImages.length ? "error" : "ok",
       text: relativeImages.length ? "正文包含相对图片路径，请改成 https 图片地址或 /assets/ 路径。" : "没有会阻塞构建的相对图片路径。"
+    },
+    {
+      level: imageRefs.length ? "ok" : "warning",
+      text: imageRefs.length
+        ? `已引用 ${imageRefs.length} 张图片：外链 ${remoteImages.length} 张，站内 ${siteImages.length} 张。`
+        : "正文尚未引用图片；如果是纯文字文章可以忽略。"
     },
     {
       level: placeholderImages.length || placeholderLinks.length ? "warning" : "ok",
@@ -365,6 +409,27 @@ function insertMarkdown(action: string) {
   updatePreflight();
   writeLocalDraft();
   setDebug(`已插入 Markdown 片段：${action}。`);
+}
+
+function insertMarkdownSnippet(snippet: string) {
+  const textarea = fields.body;
+  if (!textarea) return;
+
+  const start = textarea.selectionStart;
+  const value = textarea.value;
+  const needsLeadingBreak = start > 0 && value[start - 1] !== "\n";
+  const prefix = needsLeadingBreak ? "\n" : "";
+  const suffix = value.slice(start).startsWith("\n") ? "" : "\n";
+  const nextValue = `${value.slice(0, start)}${prefix}${snippet}${suffix}${value.slice(start)}`;
+  const cursor = start + prefix.length + snippet.length + suffix.length;
+
+  textarea.value = nextValue;
+  textarea.focus();
+  textarea.setSelectionRange(cursor, cursor);
+  updatePreview();
+  updatePreflight();
+  writeLocalDraft();
+  clearDeployStatus();
 }
 
 function renderInlineMarkdown(value: string) {
@@ -544,6 +609,23 @@ form?.addEventListener("input", () => {
 });
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
   button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
+});
+insertImageButton?.addEventListener("click", () => {
+  const snippet = getImageMarkdown();
+  if (!snippet) return;
+  insertMarkdownSnippet(snippet);
+  setImageMessage("图片 Markdown 已插入正文。", "success");
+  setDebug("图片工具已插入 Markdown 图片。");
+});
+copyImageButton?.addEventListener("click", async () => {
+  const snippet = getImageMarkdown();
+  if (!snippet) return;
+  try {
+    await navigator.clipboard.writeText(snippet);
+    setImageMessage("图片 Markdown 已复制。", "success");
+  } catch {
+    setImageMessage(`无法自动复制，请手动复制：${snippet}`, "error");
+  }
 });
 restoreDraftButton?.addEventListener("click", () => {
   const snapshot = readLocalDraft();

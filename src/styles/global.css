@@ -823,6 +823,26 @@ h3 {
   color: var(--color-text);
 }
 
+.admin-image-tool {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--color-bg-secondary) 76%, transparent);
+  margin-bottom: var(--space-3);
+}
+
+.admin-image-tool .admin-row-actions,
+.admin-image-tool .meta {
+  grid-column: 1 / -1;
+}
+
+.admin-image-tool .meta {
+  margin: 0;
+}
+
 .admin-textarea {
   min-height: 360px;
   padding-block: var(--space-3);
@@ -1165,6 +1185,10 @@ h3 {
   }
 
   .admin-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-image-tool {
     grid-template-columns: 1fr;
   }
 

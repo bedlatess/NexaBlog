@@ -39,6 +39,21 @@ const { mode } = Astro.props;
         <button class="toolbar-button" type="button" data-markdown-insert="image">Image</button>
         <button class="toolbar-button" type="button" data-markdown-insert="hr">HR</button>
       </div>
+      <div class="admin-image-tool" data-admin-image-tool>
+        <label>
+          <span class="label">图片地址</span>
+          <input class="admin-input" type="url" placeholder="https://example.com/image.jpg 或 /assets/image.jpg" data-admin-image-url />
+        </label>
+        <label>
+          <span class="label">图片说明</span>
+          <input class="admin-input" type="text" placeholder="图片描述" data-admin-image-alt />
+        </label>
+        <div class="admin-row-actions">
+          <button class="tag" type="button" data-admin-image-insert>插入图片</button>
+          <button class="tag" type="button" data-admin-image-copy>复制 Markdown</button>
+        </div>
+        <p class="meta" data-admin-image-message>建议使用 https 图片地址，或把图片放到站内 /assets/ 后引用。</p>
+      </div>
       <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
     </label>
     <div class="admin-checks">
