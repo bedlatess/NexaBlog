@@ -355,6 +355,11 @@ h3 {
   text-decoration: none;
 }
 
+.tag:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .quiet-panel {
   padding: var(--space-8);
 }

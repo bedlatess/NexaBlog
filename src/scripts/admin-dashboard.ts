@@ -17,6 +17,7 @@ const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 let allPosts: AdminPost[] = [];
 let activeStatus = "all";
+let currentUserId: string | null = null;
 
 function setMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
   if (!message) return;
@@ -44,6 +45,34 @@ function formatDateTime(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+function getNextSlug(baseSlug: string, takenSlugs: string[]) {
+  const taken = new Set(takenSlugs);
+  if (!taken.has(baseSlug)) return baseSlug;
+
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${baseSlug}-${index}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+
+  return `${baseSlug}-${Date.now()}`;
+}
+
+async function getAvailableSlug(baseSlug: string) {
+  if (!supabase) return baseSlug;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("slug")
+    .or(`slug.eq.${baseSlug},slug.like.${baseSlug}-%`);
+
+  if (error) {
+    setMessage(`检查 slug 是否重复失败：${error.message}`, "error");
+    return baseSlug;
+  }
+
+  return getNextSlug(baseSlug, (data ?? []).map((post) => post.slug));
+}
+
 function renderPosts(posts: AdminPost[]) {
   if (!list) return;
   if (!posts.length) {
@@ -69,6 +98,7 @@ function renderPosts(posts: AdminPost[]) {
       <span class="admin-row-actions">
         <span class="status-pill ${post.draft ? "is-muted" : ""}">${post.draft ? "草稿" : "已发布"}</span>
         ${post.draft ? "" : `<a class="tag" href="/articles/${encodeURIComponent(post.slug)}/">前台</a>`}
+        <button class="tag" type="button" data-admin-duplicate-post="${escapeHtml(post.id)}">复制为草稿</button>
         <a class="tag" href="/admin/posts/edit/?id=${encodeURIComponent(post.id)}">编辑</a>
       </span>
     </div>
@@ -118,6 +148,48 @@ function setActiveStatus(status: string) {
   filterPosts();
 }
 
+async function duplicatePost(postId: string, trigger: HTMLButtonElement) {
+  if (!supabase) return;
+  const source = allPosts.find((post) => post.id === postId);
+  if (!source) {
+    setMessage("没有找到要复制的文章，请刷新后台后重试。", "error");
+    return;
+  }
+  if (!currentUserId) {
+    setMessage("登录会话已失效，请重新登录后再复制文章。", "error");
+    return;
+  }
+
+  trigger.disabled = true;
+  trigger.textContent = "复制中...";
+  setMessage(`正在复制《${source.title}》为草稿...`);
+
+  const slug = await getAvailableSlug(`${source.slug}-copy`);
+  const payload = {
+    slug,
+    title: `${source.title} 副本`,
+    description: source.description,
+    body: source.body,
+    tags: source.tags ?? [],
+    draft: true,
+    featured: false,
+    published_at: null,
+    author_id: currentUserId
+  };
+
+  const { data, error } = await supabase.from("posts").insert(payload).select("*").single();
+  if (error) {
+    trigger.disabled = false;
+    trigger.textContent = "复制为草稿";
+    setMessage(error.message, "error");
+    return;
+  }
+
+  allPosts = [data as AdminPost, ...allPosts];
+  setActiveStatus("draft");
+  setMessage(`已复制为草稿：${data.title}。`, "success");
+}
+
 if (root) {
   if (!config.configured || !supabase) {
     setMessage("Supabase 尚未配置。填写 .env 后，这里会显示真实文章数据。", "error");
@@ -126,6 +198,7 @@ if (root) {
     if (!data.session) {
       window.location.assign(`/admin/login/?next=${encodeURIComponent(window.location.pathname)}`);
     } else {
+      currentUserId = data.session.user.id;
       if (sessionLabel) sessionLabel.textContent = data.session.user.email ?? "已登录";
       setMessage("正在读取 Supabase 文章...");
       const { data: posts, error } = await supabase
@@ -146,6 +219,14 @@ if (root) {
 searchInput?.addEventListener("input", filterPosts);
 statusButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveStatus(button.dataset.adminPostStatus ?? "all"));
+});
+
+list?.addEventListener("click", (event) => {
+  const target = event.target instanceof HTMLElement
+    ? event.target.closest<HTMLButtonElement>("[data-admin-duplicate-post]")
+    : null;
+  if (!target) return;
+  void duplicatePost(target.dataset.adminDuplicatePost ?? "", target);
 });
 
 logoutButton?.addEventListener("click", async () => {
