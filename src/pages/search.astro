@@ -3,19 +3,36 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { site } from "@/data/site";
 ---
 
-<BaseLayout title={`搜索 - ${site.name}`} description={`搜索 ${site.name} 的文章标题、摘要和标签。`}>
+<BaseLayout title={`搜索 - ${site.name}`} description={`搜索 ${site.name} 的文章内容。`}>
   <section class="narrow">
     <p class="eyebrow">Search</p>
     <h1>搜索文章</h1>
-    <p class="hero-copy">静态索引，本地过滤。支持多词搜索、键盘上下选择。</p>
+    <p class="hero-copy">全文搜索，支持关键词高亮和上下文预览。</p>
 
-    <div class="search-box" role="search">
-      <input data-search-input type="search" placeholder="输入关键词，例如：静态 设计 Markdown" autocomplete="off" aria-label="搜索文章" />
-      <button class="button" type="button">搜索</button>
-    </div>
-    <p class="meta" data-search-count aria-live="polite">加载索引中</p>
-    <div class="article-grid" data-search-results style="margin-top: var(--space-6)" role="list"></div>
+    <div id="pagefind-search" style="margin-top: var(--space-8)"></div>
   </section>
-  <script src="/scripts/search.js" defer></script>
-</BaseLayout>
 
+  <link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+  <script is:inline src="/pagefind/pagefind-ui.js"></script>
+  <script is:inline>
+    window.addEventListener("DOMContentLoaded", () => {
+      new PagefindUI({
+        element: "#pagefind-search",
+        showSubResults: true,
+        translations: {
+          placeholder: "输入关键词搜索...",
+          clear_search: "清除",
+          load_more: "加载更多",
+          search_label: "搜索本站",
+          filters_label: "过滤",
+          zero_results: "没有找到 [SEARCH_TERM] 的结果",
+          many_results: "[COUNT] 个结果",
+          one_result: "[COUNT] 个结果",
+          alt_search: "没有找到 [SEARCH_TERM] 的结果。显示 [DIFFERENT_TERM] 的结果：",
+          search_suggestion: "没有找到 [SEARCH_TERM] 的结果。试试以下搜索：",
+          searching: "搜索中..."
+        }
+      });
+    });
+  </script>
+</BaseLayout>

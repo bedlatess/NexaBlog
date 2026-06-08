@@ -47,19 +47,19 @@ const jsonLd = {
   {updated && <meta property="article:modified_time" content={updated.toISOString()} slot="head" />}
   {post.data.tags.map((tag) => <meta property="article:tag" content={tag} slot="head" />)}
 
-  <div class="reading-progress" data-reading-progress aria-hidden="true"></div>
+  <div class="reading-progress" data-reading-progress aria-hidden="true" data-pagefind-ignore></div>
   <div class="container article-shell">
-    <article>
+    <article data-pagefind-body>
       <header class="article-header">
-        <p class="eyebrow">Article</p>
+        <p class="eyebrow" data-pagefind-ignore>Article</p>
         {post.data.cover?.image && (
-          <div class="article-cover-image">
+          <div class="article-cover-image" data-pagefind-ignore>
             <img src={post.data.cover.image} alt={post.data.cover.label ?? post.data.title} loading="eager" decoding="async" />
           </div>
         )}
-        <h1>{post.data.title}</h1>
-        <p class="article-description">{post.data.description}</p>
-        <p class="meta">
+        <h1 data-pagefind-meta="title">{post.data.title}</h1>
+        <p class="article-description" data-pagefind-meta="description">{post.data.description}</p>
+        <p class="meta" data-pagefind-ignore>
           发布于 {formatDate(post.data.published)} · {getReadingTime(post.body)}
           {updated && <> · 更新于 {formatDate(updated)}</>}
         </p>
