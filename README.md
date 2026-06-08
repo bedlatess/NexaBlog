@@ -2,7 +2,7 @@
 
 静态优先的开源个人博客系统。公开站完全静态构建（Astro），后台管理由 Supabase 支撑，评论、统计、打赏按需启用。
 
-A static-first open-source blog system. The public site is fully static (Astro), admin is powered by Supabase, and comments/analytics/donations are opt-in.
+A static-first open-source blog system. The public site is fully static (Astro), admin is powered by Supabase, comments/analytics/donations are opt-in.
 
 **Demo**: [blog.pawn.eu.org](https://blog.pawn.eu.org)
 
@@ -11,11 +11,14 @@ A static-first open-source blog system. The public site is fully static (Astro),
 ## 特性 / Features
 
 - 静态核心：Astro 构建，默认零 JS，CDN 分发
-- Supabase 后台：写作、发布、图片上传、备份，全在浏览器内完成
-- 自动重建：发布文章后触发 Vercel Deploy Hook
+- Supabase 后台：写作、发布、图片上传、JSON/Markdown 备份，全在浏览器内完成
+- 自动重建：发布或下线文章时通过 Supabase trigger 触发 Vercel 重建
+- 自动备份：GitHub Actions 每日把 Supabase 文章导出到仓库 `backups/posts.json`
+- 文章封面图：支持真实图片封面，回退到 CSS 信号卡片
 - 可选集成：Giscus 评论、Plausible 统计、多渠道打赏——不配置则不加载
 - 亮暗主题：系统 / 浅色 / 深色三档，持久化
 - 全文搜索：静态 JSON 索引，客户端过滤，无追踪
+- SEO：RSS、Sitemap、robots.txt、Open Graph、JSON-LD 结构化数据
 
 ---
 
@@ -59,7 +62,7 @@ PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 PUBLIC_ADMIN_EMAIL=you@example.com
 ```
 
-3. 在 Supabase Auth 里创建用户，拿到 user id 后执行：
+3. 在 Supabase Auth 创建用户，拿到 user id 后执行：
 
 ```sql
 insert into admin_users (user_id, email)
@@ -67,13 +70,13 @@ values ('your-user-id', 'you@example.com')
 on conflict (user_id) do nothing;
 ```
 
-4. 在 Supabase → Authentication → URL Configuration 里添加：
+4. 在 Supabase → Authentication → URL Configuration 添加：
    - `http://localhost:4321/admin/login/`
    - `https://your-domain.com/admin/login/`
 
 5. 打开 `/admin/login/` 登录
 
-> anon key 是公开安全的。不要使用 service-role key。访问控制由 RLS 策略实现。
+> anon key 可公开。不要使用 service-role key。访问控制由 RLS 策略实现。
 
 ---
 
@@ -92,7 +95,7 @@ on conflict (user_id) do nothing;
 | `PUBLIC_GISCUS_REPO_ID` | Giscus repo ID |
 | `PUBLIC_GISCUS_CATEGORY` | Giscus discussion category |
 | `PUBLIC_GISCUS_CATEGORY_ID` | Giscus category ID |
-| `PUBLIC_DONATE_PAYPAL_URL` | PayPal 打赏链接（其他渠道同理） |
+| `PUBLIC_DONATE_*_LABEL / URL` | 打赏渠道（留空则隐藏） |
 
 ---
 
@@ -100,7 +103,13 @@ on conflict (user_id) do nothing;
 
 ### Giscus 评论
 
-在 GitHub 仓库开启 Discussions，前往 [giscus.app](https://giscus.app) 获取配置参数，填入上表 4 个必填变量。文章页会自动加载评论区。
+1. 在 GitHub 仓库 Settings → 开启 Discussions，并初始化
+2. 安装 [giscus GitHub App](https://github.com/apps/giscus) 到该仓库
+3. 在 [giscus.app](https://giscus.app) 配置仓库和 Announcements 分类，复制 4 个参数：
+   - `PUBLIC_GISCUS_REPO`
+   - `PUBLIC_GISCUS_REPO_ID`
+   - `PUBLIC_GISCUS_CATEGORY`
+   - `PUBLIC_GISCUS_CATEGORY_ID`
 
 ### Plausible 统计
 
@@ -135,7 +144,8 @@ featured: true
 cover:
   label: "Design"
   signal: "01. 克制"
-  tone: "ink"   # blue | ink | green | amber | red
+  tone: "ink"   # blue | ink | green | amber
+  image: "https://example.com/cover.jpg"  # 可选，有则显示真实图片
 ---
 ```
 
@@ -154,6 +164,29 @@ npm run build:with-supabase  # 同步 + 构建
 
 ---
 
+## 自动备份 / Auto Backup
+
+GitHub Actions 每日 UTC 02:00 把 Supabase 文章导出到 `backups/posts.json`。
+
+启用步骤：
+
+1. 在仓库 Settings → Secrets and variables → Actions 添加：
+   - `PUBLIC_SUPABASE_URL`
+   - `PUBLIC_SUPABASE_ANON_KEY`
+2. Actions 标签 → "Backup posts to GitHub" → Run workflow 手动触发一次确认
+
+工作流文件：`.github/workflows/backup.yml`，备份脚本：`scripts/backup-to-github.mjs`。
+
+---
+
+## 定时发布 / Scheduled Publish
+
+支持把文章 `published_at` 设置为未来时间，到时间自动触发重建上线。
+
+启用：在 Supabase SQL 编辑器执行 `supabase/scheduled-publish.sql`，需要先把 `__VERCEL_DEPLOY_HOOK_URL__` 替换为你的 Deploy Hook URL。
+
+---
+
 ## 项目结构 / Structure
 
 ```
@@ -166,8 +199,9 @@ src/
   data/                站点配置、集成配置、友链
   lib/                 内容工具函数
 public/scripts/        客户端 JS（主题、搜索、文章增强）
-supabase/              数据库 schema 和部署触发 SQL
-scripts/               构建脚本（sync、check、env loader）
+supabase/              数据库 schema、部署触发、定时发布 SQL
+scripts/               构建与运维脚本（sync、check、backup）
+.github/workflows/     GitHub Actions（自动备份）
 docs/                  部署和集成文档
 ```
 
@@ -175,10 +209,13 @@ docs/                  部署和集成文档
 
 ## 开发路线 / Roadmap
 
-- [ ] 定时发布（Supabase Edge Function + cron）
-- [ ] 数据库自动备份到 GitHub
+- [x] 文章封面图支持
+- [x] 数据库自动备份到 GitHub
+- [x] 定时发布
 - [ ] 多作者角色权限
+- [ ] Pagefind 替换 JSON 搜索（适用于大量文章）
 - [ ] `npm create nexablog` 一键建站 CLI
+- [ ] 主题系统（替换设计 token 实现多主题）
 
 ---
 

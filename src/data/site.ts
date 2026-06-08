@@ -1,8 +1,8 @@
 export const site = {
-  name: "PAWN",
-  title: "PAWN - 产品、设计与工程",
+  name: "NexaBlog",
+  title: "NexaBlog - 静态优先的个人博客",
   description:
-    "独立开发者 PAWN 的写作空间。写产品思维、设计系统和工程美学的交叉地带。",
+    "NexaBlog 演示站，由 PAWN 维护。写产品思维、设计系统和工程美学的交叉地带。",
   url: import.meta.env.PUBLIC_SITE_URL ?? "https://nexablog.example.com",
   author: "PAWN",
   locale: "zh-CN",

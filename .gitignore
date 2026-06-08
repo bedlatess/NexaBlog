@@ -7,3 +7,10 @@ dist/
 .env.*.local
 .superpowers/
 *.log
+
+# Local browser/screenshot temp directories
+.tmp-chrome-profile*/
+.tmp-screens/
+
+# Project notes (kept locally only)
+kf.md
