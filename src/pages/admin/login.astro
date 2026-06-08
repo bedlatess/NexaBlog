@@ -1,0 +1,33 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+const defaultEmail = import.meta.env.PUBLIC_ADMIN_EMAIL ?? "";
+---
+
+<BaseLayout title="登录后台 - NexaBlog" description="登录 NexaBlog 管理后台。">
+  <section class="narrow">
+    <p class="eyebrow">Admin Login</p>
+    <h1>登录后台</h1>
+    <p class="hero-copy">
+      使用 Supabase Auth 登录。支持邮箱密码，也可以发送 magic link。
+    </p>
+
+    <form class="quiet-panel admin-form" data-admin-login-form>
+      <label>
+        <span class="label">邮箱</span>
+        <input class="admin-input" data-admin-email name="email" type="email" value={defaultEmail} autocomplete="email" required />
+      </label>
+      <label>
+        <span class="label">密码</span>
+        <input class="admin-input" data-admin-password name="password" type="password" autocomplete="current-password" />
+      </label>
+      <div class="admin-actions">
+        <button class="button" type="submit">登录</button>
+        <button class="tag" type="button" data-admin-magic-link>发送 magic link</button>
+      </div>
+      <p class="meta" data-admin-login-message>等待输入登录信息。</p>
+    </form>
+  </section>
+  <script>
+    import "@/scripts/admin-login";
+  </script>
+</BaseLayout>

@@ -1,0 +1,30 @@
+---
+import type { BlogPost } from "@/lib/content";
+import { formatDate, getReadingTime, postUrl } from "@/lib/content";
+
+interface Props {
+  post: BlogPost;
+}
+
+const { post } = Astro.props;
+const cover = post.data.cover ?? { label: "Article", signal: "Nexa", tone: "blue" };
+---
+
+<a class="article-card" href={postUrl(post)}>
+  <div>
+    <div class="signal-card quiet-panel" data-tone={cover.tone}>
+      <span class="signal">{cover.signal}</span>
+      <strong class="signal-title">{cover.label}</strong>
+    </div>
+    <h3>{post.data.title}</h3>
+    <p>{post.data.description}</p>
+  </div>
+  <div>
+    <p class="meta">{formatDate(post.data.published)} · {getReadingTime(post.body)}</p>
+    <div class="tag-list" style="margin-top: var(--space-3)">
+      {post.data.tags.slice(0, 3).map((tag) => (
+        <span class="tag">#{tag}</span>
+      ))}
+    </div>
+  </div>
+</a>

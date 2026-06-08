@@ -1,0 +1,20 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="搜索 - NexaBlog" description="搜索 NexaBlog 的文章标题、摘要和标签。">
+  <section class="narrow">
+    <p class="eyebrow">Search</p>
+    <h1>搜索文章</h1>
+    <p class="hero-copy">静态索引，本地过滤。没有后端请求，也没有追踪。</p>
+
+    <div class="search-box">
+      <input data-search-input type="search" placeholder="输入关键词，例如：静态、设计、Markdown" autocomplete="off" />
+      <button class="button" type="button">搜索</button>
+    </div>
+    <p class="meta" data-search-count>加载索引中</p>
+    <div class="article-grid" data-search-results style="margin-top: var(--space-6)"></div>
+  </section>
+  <script src="/scripts/search.js" defer></script>
+</BaseLayout>
+

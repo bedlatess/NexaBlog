@@ -1,0 +1,23 @@
+{
+  "name": "nexablog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:with-supabase": "npm run sync:supabase && astro build",
+    "preview": "astro preview",
+    "check:production": "node scripts/check-production.mjs",
+    "sync:supabase": "node scripts/sync-supabase-posts.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.18",
+    "@supabase/supabase-js": "^2.107.0",
+    "astro": "^6.4.4"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

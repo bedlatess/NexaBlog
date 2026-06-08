@@ -1,0 +1,8 @@
+---
+import { integrations } from "@/data/integrations";
+---
+
+{integrations.plausible.enabled && (
+  <script defer data-domain={integrations.plausible.domain} src="https://plausible.io/js/script.js"></script>
+)}
+

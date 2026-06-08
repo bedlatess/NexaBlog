@@ -1,0 +1,27 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="关于 - NexaBlog" description="关于 NexaBlog 的设计原则和路线。">
+  <section class="narrow">
+    <p class="eyebrow">About</p>
+    <h1>关于 NexaBlog</h1>
+    <div class="prose">
+      <p>
+        NexaBlog 是一个轻量、精致、静态优先的个人博客系统。它把公开阅读体验作为产品核心，再用动态能力补充后台管理、评论、统计和打赏。
+      </p>
+      <h2>设计原则</h2>
+      <ul>
+        <li>留白优先，让内容成为单一视觉焦点。</li>
+        <li>无装饰性元素，所有界面元素都有明确功能。</li>
+        <li>浅色和深色主题都保持高对比度。</li>
+        <li>动效短、轻、可感知，但不打扰阅读。</li>
+      </ul>
+      <h2>路线</h2>
+      <p>
+        V1 完成静态博客核心。V2 接入 Supabase 后台、Giscus 评论、Plausible 统计、多渠道打赏和自动备份。
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+

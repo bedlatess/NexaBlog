@@ -1,0 +1,17 @@
+---
+import { site } from "@/data/site";
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div>
+      <strong>{site.name}</strong>
+      <div>静态优先，动态增强。© {year}</div>
+    </div>
+    <div class="tag-list" aria-label="外部链接">
+      {site.socials.map((item) => <a class="tag" href={item.href}>{item.label}</a>)}
+    </div>
+  </div>
+</footer>
+

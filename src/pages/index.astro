@@ -1,0 +1,80 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ArticleCard from "@/components/ArticleCard.astro";
+import { site } from "@/data/site";
+import { getAllTags, getPublishedPosts, formatDate, getReadingTime, postUrl } from "@/lib/content";
+import { tagSlug } from "@/lib/tags";
+
+const posts = await getPublishedPosts();
+const featured = posts.find((post) => post.data.featured) ?? posts[0];
+const recent = posts.filter((post) => post.id !== featured?.id).slice(0, 4);
+const tags = getAllTags(posts).slice(0, 10);
+---
+
+<BaseLayout title={site.title} description={site.description}>
+  <section class="container hero">
+    <div>
+      <p class="eyebrow">Nexa Minimal / Static First</p>
+      <h1>把个人写作做成一件安静的产品。</h1>
+      <p class="hero-copy">
+        NexaBlog 先把公开阅读体验打磨到足够快、足够清晰、足够可靠。后台、评论和统计作为动态增强加入，而不是反过来支配博客。
+      </p>
+      <div class="tag-list" style="margin-top: var(--space-6)">
+        <a class="tag" href="/articles/">浏览文章</a>
+        <a class="tag" href="/search/">搜索内容</a>
+        <a class="tag" href="/rss.xml">RSS 订阅</a>
+      </div>
+    </div>
+
+    {featured && (
+      <a class="hero-panel signal-card" data-tone={featured.data.cover?.tone ?? "blue"} href={postUrl(featured)}>
+        <span class="signal">{featured.data.cover?.signal ?? "Featured"}</span>
+        <div>
+          <p class="meta">{formatDate(featured.data.published)} · {getReadingTime(featured.body)}</p>
+          <h2 class="signal-title">{featured.data.title}</h2>
+          <p>{featured.data.description}</p>
+        </div>
+      </a>
+    )}
+  </section>
+
+  <section class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Recent Articles</p>
+        <h2>最近写作</h2>
+      </div>
+      <a class="tag" href="/articles/">全部文章</a>
+    </div>
+    <div class="article-grid">
+      {recent.map((post) => <ArticleCard post={post} />)}
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Index</p>
+        <h2>从主题进入</h2>
+      </div>
+      <a class="tag" href="/tags/">标签云</a>
+    </div>
+    <div class="quiet-panel">
+      <div class="tag-list">
+        {tags.map((tag) => (
+          <a class="tag" href={`/tags/${tag.slug}/`}>#{tag.label} · {tag.count}</a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="quiet-panel" style="margin-top: var(--space-12)">
+      <p class="eyebrow">V1 Boundary</p>
+      <h2>静态核心已经能独立工作。</h2>
+      <p>
+        当前版本优先完成发布、阅读、发现和归档。后续接入 Supabase 后台时，只需要补充写入与同步层，不需要重做公开站点。
+      </p>
+    </div>
+  </section>
+</BaseLayout>

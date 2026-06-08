@@ -1,0 +1,249 @@
+import { createBrowserSupabase, getSupabaseConfig, type AdminPost } from "@/lib/supabase-browser";
+
+const form = document.querySelector<HTMLFormElement>("[data-admin-editor]");
+const message = document.querySelector<HTMLElement>("[data-admin-editor-message]");
+const debug = document.querySelector<HTMLElement>("[data-admin-editor-debug]");
+const preview = document.querySelector<HTMLElement>("[data-admin-preview]");
+const saveButton = document.querySelector<HTMLButtonElement>("[data-admin-save]");
+const config = getSupabaseConfig();
+const supabase = createBrowserSupabase();
+const params = new URLSearchParams(window.location.search);
+let postId = params.get("id");
+let currentPost: AdminPost | null = null;
+let sessionReady = false;
+const editorVersion = "admin-editor-2026-06-07-2148";
+
+const fields = {
+  slug: document.querySelector<HTMLInputElement>("[name='slug']"),
+  title: document.querySelector<HTMLInputElement>("[name='title']"),
+  description: document.querySelector<HTMLInputElement>("[name='description']"),
+  tags: document.querySelector<HTMLInputElement>("[name='tags']"),
+  body: document.querySelector<HTMLTextAreaElement>("[name='body']"),
+  draft: document.querySelector<HTMLInputElement>("[name='draft']"),
+  featured: document.querySelector<HTMLInputElement>("[name='featured']")
+};
+
+function setMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
+  if (!message) return;
+  message.textContent = text;
+  message.dataset.tone = tone;
+}
+
+function setDebug(text: string) {
+  if (!debug) return;
+  debug.textContent = `诊断：${text}`;
+}
+
+function setSaving(saving: boolean) {
+  if (!saveButton) return;
+  saveButton.disabled = saving;
+  saveButton.textContent = saving ? "保存中..." : postId ? "保存修改" : "创建草稿";
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char] ?? char);
+}
+
+function generateDraftSlug() {
+  const stamp = new Date()
+    .toISOString()
+    .replace(/\D/g, "")
+    .slice(0, 14);
+  return `draft-${stamp}`;
+}
+
+function fieldValue(field: HTMLInputElement | HTMLTextAreaElement | null) {
+  return field?.value ?? "";
+}
+
+function trimmedFieldValue(field: HTMLInputElement | HTMLTextAreaElement | null) {
+  return fieldValue(field).trim();
+}
+
+function updatePreview() {
+  if (!preview) return;
+  preview.innerHTML = `
+    <p class="eyebrow">Preview</p>
+    <h2>${escapeHtml(fields.title?.value || "未命名文章")}</h2>
+    <p>${escapeHtml(fields.description?.value || "暂无摘要")}</p>
+    <pre style="white-space: pre-wrap">${escapeHtml(fields.body?.value || "从这里开始写 Markdown。")}</pre>
+  `;
+}
+
+function fill(post: AdminPost) {
+  currentPost = post;
+  if (fields.slug) fields.slug.value = post.slug;
+  if (fields.title) fields.title.value = post.title;
+  if (fields.description) fields.description.value = post.description;
+  if (fields.tags) fields.tags.value = post.tags.join(", ");
+  if (fields.body) fields.body.value = post.body;
+  if (fields.draft) fields.draft.checked = post.draft;
+  if (fields.featured) fields.featured.checked = post.featured;
+  updatePreview();
+}
+
+async function ensureSession({ redirect = true } = {}) {
+  setDebug("正在读取浏览器登录会话。");
+  if (!config.configured || !supabase) {
+    setMessage("Supabase 尚未配置。请先填写环境变量。", "error");
+    setDebug("Supabase 环境变量未注入到浏览器脚本。");
+    form?.querySelectorAll("input, textarea, button").forEach((node) => {
+      (node as HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement).disabled = true;
+    });
+    return false;
+  }
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    setMessage("登录会话不存在，请重新登录。", "error");
+    setDebug(`没有找到当前 origin 的登录会话：${window.location.origin}`);
+    if (redirect) {
+      window.location.assign(`/admin/login/?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    }
+    return false;
+  }
+  sessionReady = true;
+  setMessage(`已登录：${data.session.user.email ?? "当前用户"}。可以保存文章。`, "success");
+  setDebug(`会话有效，用户 ${data.session.user.email ?? data.session.user.id}。`);
+  return true;
+}
+
+form?.addEventListener("input", updatePreview);
+saveButton?.addEventListener("click", () => {
+  setMessage("已点击保存按钮，正在提交表单...");
+  setDebug("保存按钮 click 已被主编辑模块捕获。");
+});
+
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setMessage("表单提交事件已触发。");
+  setDebug("表单 submit 已被主编辑模块捕获。");
+  if (!supabase) {
+    setMessage("Supabase 客户端不可用，请检查环境变量。", "error");
+    setDebug("Supabase 客户端创建失败。");
+    return;
+  }
+
+  const isCreating = !postId;
+  const slug = trimmedFieldValue(fields.slug) || (isCreating ? generateDraftSlug() : "");
+  const title = trimmedFieldValue(fields.title) || (isCreating ? "未命名草稿" : "");
+  const description = trimmedFieldValue(fields.description) || (isCreating ? "从后台创建的草稿。" : "");
+  if (isCreating) {
+    if (fields.slug && !trimmedFieldValue(fields.slug)) fields.slug.value = slug;
+    if (fields.title && !trimmedFieldValue(fields.title)) fields.title.value = title;
+    if (fields.description && !trimmedFieldValue(fields.description)) fields.description.value = description;
+    updatePreview();
+  }
+  if (!slug || !title || !description) {
+    setMessage("请填写 slug、标题和摘要。", "error");
+    setDebug("表单校验未通过：slug、标题、摘要为必填。");
+    return;
+  }
+  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(slug)) {
+    setMessage("Slug 只能使用小写英文、数字和连字符，例如 first-live-post。", "error");
+    setDebug(`表单校验未通过：slug "${slug}" 格式不合法。`);
+    fields.slug?.focus();
+    return;
+  }
+
+  try {
+    setSaving(true);
+    setMessage(sessionReady ? "正在准备保存..." : "正在检查登录会话...");
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      setMessage(sessionError.message, "error");
+      setDebug(`读取会话失败：${sessionError.message}`);
+      return;
+    }
+    const userId = sessionData.session?.user.id ?? null;
+    if (!userId) {
+      setMessage("登录会话已失效，请重新登录。", "error");
+      setDebug("保存前检查发现会话已失效。");
+      window.location.assign(`/admin/login/?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+
+    const isDraft = fields.draft?.checked ?? true;
+    const payload = {
+      slug,
+      title,
+      description,
+      body: fieldValue(fields.body),
+      tags: fieldValue(fields.tags).split(",").map((tag) => tag.trim()).filter(Boolean),
+      draft: isDraft,
+      featured: fields.featured?.checked ?? false,
+      published_at: isDraft ? null : currentPost?.published_at ?? new Date().toISOString(),
+      author_id: userId
+    };
+
+    setMessage("正在写入 Supabase...");
+    setDebug(`准备写入 posts，slug=${slug}，draft=${String(isDraft)}。`);
+    const query = postId
+      ? supabase.from("posts").update(payload).eq("id", postId).select("*").single()
+      : supabase.from("posts").insert(payload).select("*").single();
+    const { data, error } = await query;
+
+    if (error) {
+      setMessage(`${error.message}${error.code ? ` (${error.code})` : ""}`, "error");
+      setDebug(`Supabase 写入失败：${error.message}${error.code ? ` (${error.code})` : ""}`);
+      return;
+    }
+
+    setMessage("保存成功。", "success");
+    setDebug(`Supabase 写入成功，id=${data?.id ?? postId ?? "unknown"}。`);
+    currentPost = data as AdminPost;
+    if (!postId && data?.id) {
+      postId = data.id;
+      window.history.replaceState({}, "", `/admin/posts/edit/?id=${encodeURIComponent(data.id)}`);
+      setSaving(false);
+    }
+  } catch (error) {
+    setMessage(error instanceof Error ? error.message : "保存失败，浏览器脚本发生未知错误。", "error");
+    setDebug(error instanceof Error ? `浏览器异常：${error.message}` : "浏览器发生未知异常。");
+  } finally {
+    setSaving(false);
+  }
+});
+
+async function initEditor() {
+  setDebug(`${editorVersion} 已加载。origin=${window.location.origin}`);
+  setMessage("编辑器脚本已加载，正在检查 Supabase 会话...");
+  updatePreview();
+
+  if (!(await ensureSession())) return;
+
+  if (postId) {
+    setMessage("正在读取文章...");
+    const { data, error } = await supabase!
+      .from("posts")
+      .select("*")
+      .eq("id", postId)
+      .single();
+    if (error) setMessage(error.message, "error");
+    else {
+      fill(data as AdminPost);
+      setMessage("文章已载入。", "success");
+    }
+  }
+}
+
+void initEditor();
+
+document.querySelector<HTMLButtonElement>("[data-admin-delete]")?.addEventListener("click", async () => {
+  if (!supabase || !postId) return;
+  const title = fields.title?.value || "这篇文章";
+  if (!window.confirm(`确认删除「${title}」？这个操作会删除 Supabase 记录。`)) return;
+
+  setMessage("正在删除...");
+  const { error } = await supabase.from("posts").delete().eq("id", postId);
+  if (error) {
+    setMessage(error.message, "error");
+    return;
+  }
+  window.location.assign("/admin/");
+});

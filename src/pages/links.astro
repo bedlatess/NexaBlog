@@ -1,0 +1,42 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const links = [
+  {
+    name: "Astro",
+    url: "https://astro.build/",
+    description: "静态优先的内容站点框架。"
+  },
+  {
+    name: "Supabase",
+    url: "https://supabase.com/",
+    description: "NexaBlog V2 的后端增强候选。"
+  },
+  {
+    name: "Pagefind",
+    url: "https://pagefind.app/",
+    description: "后续可替换当前 JSON 搜索的静态搜索引擎。"
+  }
+];
+---
+
+<BaseLayout title="友链 - NexaBlog" description="NexaBlog 的友链和技术参考。">
+  <section class="container">
+    <p class="eyebrow">Links</p>
+    <h1>友链</h1>
+    <p class="hero-copy">这里既可以放朋友，也可以放这个项目依赖的思想来源。</p>
+    <div class="article-grid" style="margin-top: var(--space-8)">
+      {links.map((link) => (
+        <a class="article-card" href={link.url} target="_blank" rel="noreferrer">
+          <div>
+            <p class="meta">External</p>
+            <h3>{link.name}</h3>
+            <p>{link.description}</p>
+          </div>
+          <span class="tag">访问</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+

@@ -1,0 +1,82 @@
+---
+interface Props {
+  mode: "new" | "edit";
+}
+
+const { mode } = Astro.props;
+---
+
+<div class="admin-editor-grid">
+  <form class="quiet-panel admin-form" data-admin-editor novalidate>
+    <label>
+      <span class="label">Slug</span>
+      <input class="admin-input" name="slug" placeholder="my-first-post" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" required />
+    </label>
+    <label>
+      <span class="label">标题</span>
+      <input class="admin-input" name="title" placeholder="文章标题" required />
+    </label>
+    <label>
+      <span class="label">摘要</span>
+      <input class="admin-input" name="description" placeholder="一句话说明这篇文章" required />
+    </label>
+    <label>
+      <span class="label">标签</span>
+      <input class="admin-input" name="tags" placeholder="Astro, Supabase, 写作" />
+    </label>
+    <label class="admin-textarea-field">
+      <span class="label">正文 Markdown</span>
+      <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
+    </label>
+    <div class="admin-checks">
+      <label class="admin-check">
+        <input name="draft" type="checkbox" checked />
+        <span>保存为草稿</span>
+      </label>
+      <label class="admin-check">
+        <input name="featured" type="checkbox" />
+        <span>设为精选</span>
+      </label>
+    </div>
+    <div class="admin-actions">
+      <button class="button" type="submit" data-admin-save>{mode === "new" ? "创建草稿" : "保存修改"}</button>
+      <a class="tag" href="/admin/">返回后台</a>
+      {mode === "edit" && (
+        <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>
+      )}
+    </div>
+    <p class="meta">取消“保存为草稿”后，文章会进入 Supabase 发布状态，并可由 `npm run sync:supabase` 同步到静态内容。</p>
+    <p class="meta" data-admin-editor-message>等待 Supabase 会话。</p>
+    <p class="meta" data-admin-editor-debug>诊断：等待浏览器脚本启动。</p>
+  </form>
+
+  <aside class="quiet-panel admin-preview" data-admin-preview>
+    <p class="eyebrow">Preview</p>
+    <h2>未命名文章</h2>
+    <p>暂无摘要</p>
+    <pre style="white-space: pre-wrap">从这里开始写 Markdown。</pre>
+  </aside>
+</div>
+
+<script is:inline>
+  (() => {
+    const debug = document.querySelector("[data-admin-editor-debug]");
+    const saveButton = document.querySelector("[data-admin-save]");
+    const form = document.querySelector("[data-admin-editor]");
+    const writeDebug = (text) => {
+      if (!debug) return;
+      debug.textContent = `诊断：${text}`;
+    };
+
+    writeDebug(`页面内联脚本已启动 ${new Date().toLocaleTimeString()}`);
+    saveButton?.addEventListener("click", () => writeDebug("按钮 click 已触发，等待模块提交处理。"));
+    form?.addEventListener("submit", () => writeDebug("表单 submit 已触发，等待 Supabase 写入。"));
+    window.addEventListener("error", (event) => {
+      writeDebug(`脚本错误：${event.message}`);
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      const reason = event.reason instanceof Error ? event.reason.message : String(event.reason);
+      writeDebug(`异步错误：${reason}`);
+    });
+  })();
+</script>

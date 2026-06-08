@@ -1,0 +1,58 @@
+---
+import "../styles/global.css";
+import { site } from "@/data/site";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import MobileNav from "@/components/MobileNav.astro";
+import Analytics from "@/components/Analytics.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const {
+  title = site.title,
+  description = site.description,
+  image = "/assets/nexablog-og.png"
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, site.url);
+---
+
+<!doctype html>
+<html lang={site.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, site.url)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>{title}</title>
+    <Analytics />
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem("nexa-theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = stored === "light" || stored === "dark" ? stored : prefersDark ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <Header pathname={Astro.url.pathname} />
+      <main class="main">
+        <slot />
+      </main>
+      <Footer />
+      <MobileNav pathname={Astro.url.pathname} />
+    </div>
+    <script src="/scripts/theme.js" defer></script>
+  </body>
+</html>

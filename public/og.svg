@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="NexaBlog">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <path d="M120 120h960v390H120z" fill="#f8f9fa" stroke="#e5e7eb"/>
+  <path d="M184 192h160v24H184zm0 64h520v48H184zm0 88h420v22H184zm0 46h610v22H184z" fill="#1a1a1a"/>
+  <path d="M184 476h148v34H184z" fill="#2563eb"/>
+  <path d="M850 170h150v290H850z" fill="none" stroke="#2563eb" stroke-width="2"/>
+  <path d="M886 212h78m-78 42h44m-44 42h78m-78 42h58" stroke="#2563eb" stroke-width="8"/>
+</svg>

@@ -1,0 +1,20 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ArticleCard from "@/components/ArticleCard.astro";
+import { getPublishedPosts } from "@/lib/content";
+
+const posts = await getPublishedPosts();
+---
+
+<BaseLayout title="全部文章 - NexaBlog" description="NexaBlog 的文章归档。">
+  <section class="container">
+    <p class="eyebrow">Archive</p>
+    <h1>全部文章</h1>
+    <p class="hero-copy">按照发布时间倒序排列。这里保持传统归档的确定感，不用无限滚动把读者困在页面里。</p>
+
+    <div class="article-grid" style="margin-top: var(--space-8)">
+      {posts.map((post) => <ArticleCard post={post} />)}
+    </div>
+  </section>
+</BaseLayout>
+

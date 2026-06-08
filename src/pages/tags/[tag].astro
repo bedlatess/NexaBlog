@@ -1,0 +1,32 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ArticleCard from "@/components/ArticleCard.astro";
+import { getAllTags, getPublishedPosts } from "@/lib/content";
+import { tagSlug } from "@/lib/tags";
+
+export async function getStaticPaths() {
+  const posts = await getPublishedPosts();
+  return getAllTags(posts).map((tag) => ({
+    params: { tag: tag.slug },
+    props: { tag: tag.label }
+  }));
+}
+
+const posts = await getPublishedPosts();
+const currentTag = Astro.props.tag;
+const currentSlug = tagSlug(currentTag);
+const taggedPosts = posts.filter((post) =>
+  post.data.tags.some((tag) => tagSlug(tag) === currentSlug)
+);
+---
+
+<BaseLayout title={`#${currentTag} - NexaBlog`} description={`浏览标签 ${currentTag} 下的文章。`}>
+  <section class="container">
+    <p class="eyebrow">Tag</p>
+    <h1>#{currentTag}</h1>
+    <p class="hero-copy">{taggedPosts.length} 篇文章关联到这个主题。</p>
+    <div class="article-grid" style="margin-top: var(--space-8)">
+      {taggedPosts.map((post) => <ArticleCard post={post} />)}
+    </div>
+  </section>
+</BaseLayout>

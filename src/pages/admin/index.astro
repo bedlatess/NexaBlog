@@ -1,0 +1,147 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getAllTags, getPublishedPosts, formatDate, postUrl } from "@/lib/content";
+import { integrations, donationMethods } from "@/data/integrations";
+import { deployment } from "@/data/deployment";
+
+const posts = await getPublishedPosts();
+const tags = getAllTags(posts);
+const latest = posts[0];
+
+const checks = [
+  {
+    label: "Supabase",
+    status: integrations.supabase.enabled ? "已配置" : "待配置",
+    detail: integrations.supabase.enabled ? integrations.supabase.url : "填写 PUBLIC_SUPABASE_URL 和 PUBLIC_SUPABASE_ANON_KEY"
+  },
+  {
+    label: "Giscus",
+    status: integrations.giscus.enabled ? "已启用" : "待配置",
+    detail: integrations.giscus.enabled ? integrations.giscus.repo : "填写 GitHub Discussions 参数"
+  },
+  {
+    label: "Plausible",
+    status: integrations.plausible.enabled ? "已启用" : "待配置",
+    detail: integrations.plausible.enabled ? integrations.plausible.domain : "填写 PUBLIC_PLAUSIBLE_DOMAIN"
+  },
+  {
+    label: "打赏",
+    status: donationMethods.length ? "已配置" : "待配置",
+    detail: donationMethods.length ? `${donationMethods.length} 个渠道` : "填写 PUBLIC_DONATE_* 变量"
+  }
+];
+---
+
+<BaseLayout title="后台 - NexaBlog" description="NexaBlog 的动态增强控制台。">
+  <section class="container admin-shell">
+    <div>
+      <p class="eyebrow">Admin Preview</p>
+      <h1>后台控制台</h1>
+      <p class="hero-copy">
+        这是 V2 的静态预览壳：公开站点已经可发布，后台会在 Supabase 配置完成后接入真实登录、草稿、预览和发布流程。
+      </p>
+    </div>
+
+    <div class="admin-stats">
+      <div class="stat-card">
+        <span class="label">文章</span>
+        <strong>{posts.length}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="label">标签</span>
+        <strong>{tags.length}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="label">最近更新</span>
+        <strong>{latest ? formatDate(latest.data.updated ?? latest.data.published) : "-"}</strong>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <section class="quiet-panel">
+        <p class="eyebrow">Content</p>
+        <h2>内容管理预览</h2>
+        <div class="admin-list">
+          {posts.map((post) => (
+            <a href={postUrl(post)} class="admin-row">
+              <span>
+                <strong>{post.data.title}</strong>
+                <small>{post.data.description}</small>
+              </span>
+              <span class="meta">{formatDate(post.data.published)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="quiet-panel">
+        <p class="eyebrow">Integrations</p>
+        <h2>动态增强状态</h2>
+        <div class="admin-list">
+          {checks.map((check) => (
+            <div class="admin-row">
+              <span>
+                <strong>{check.label}</strong>
+                <small>{check.detail}</small>
+              </span>
+              <span class={`status-pill ${check.status === "待配置" ? "is-muted" : ""}`}>{check.status}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+
+    <section class="quiet-panel" data-admin-live>
+      <div class="section-head" style="margin: 0 0 var(--space-4)">
+        <div>
+          <p class="eyebrow">Supabase Live</p>
+          <h2>真实文章管理</h2>
+          <p class="meta" data-admin-live-message>等待 Supabase 配置。</p>
+          <p class="meta">当前会话：<span data-admin-session>未登录</span></p>
+        </div>
+        <div class="tag-list">
+          <a class="tag" href="/admin/posts/new/">新建文章</a>
+          <button class="icon-button" type="button" data-admin-logout aria-label="退出登录" title="退出登录">↩</button>
+        </div>
+      </div>
+      <div class="admin-list" data-admin-live-posts>
+        <div class="admin-row">
+          <span>
+            <strong>尚未连接 Supabase</strong>
+            <small>填写环境变量并执行 schema 后，这里会显示数据库文章。</small>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="quiet-panel">
+      <p class="eyebrow">Deployment</p>
+      <h2>部署准备状态</h2>
+      <div class="admin-list">
+        {deployment.checks.map((check) => (
+          <div class="admin-row">
+            <span>
+              <strong>{check.label}</strong>
+              <small>{check.detail}</small>
+            </span>
+            <span class={`status-pill ${check.status === "待配置" ? "is-muted" : ""}`}>{check.status}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="quiet-panel">
+      <p class="eyebrow">Next</p>
+      <h2>下一步接入顺序</h2>
+      <ol class="admin-steps">
+        <li>把 `PUBLIC_SITE_URL` 改成真实生产域名，并运行 `npm run check:production`。</li>
+        <li>部署到 Vercel，确认首页、RSS、sitemap、搜索索引都能从生产域名访问。</li>
+        <li>创建 Supabase 项目，启用 Auth，并执行文档里的文章表 SQL。</li>
+        <li>把后台从静态预览壳升级为登录后的文章 CRUD 和 Markdown 预览。</li>
+      </ol>
+    </section>
+  </section>
+  <script>
+    import "@/scripts/admin-dashboard";
+  </script>
+</BaseLayout>

@@ -1,0 +1,19 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import AdminEditorForm from "@/components/AdminEditorForm.astro";
+---
+
+<BaseLayout title="新建文章 - NexaBlog" description="在 NexaBlog 后台创建 Supabase 草稿。">
+  <section class="container admin-editor-shell">
+    <div>
+      <p class="eyebrow">New Post</p>
+      <h1>新建文章</h1>
+      <p class="hero-copy">先写入 Supabase 草稿。公开站点仍由 Markdown 静态内容驱动，后续会补同步/发布链路。</p>
+    </div>
+    <AdminEditorForm mode="new" />
+  </section>
+  <script>
+    import "@/scripts/admin-editor";
+  </script>
+</BaseLayout>
+

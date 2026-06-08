@@ -1,0 +1,57 @@
+---
+import { donationMethods, integrations } from "@/data/integrations";
+---
+
+<section class="quiet-panel integration-panel" style="margin-top: var(--space-12)">
+  <div>
+    <p class="eyebrow">Support</p>
+    <h2>打赏与讨论</h2>
+    <p>
+      文章主体保持静态渲染，评论和打赏作为动态增强挂载。未配置第三方服务时，这里会保持轻量提示状态。
+    </p>
+  </div>
+
+  <div class="integration-block">
+    <h3>打赏方式</h3>
+    {donationMethods.length ? (
+      <div class="tag-list">
+        {donationMethods.map((method) =>
+          method.href ? (
+            <a class="tag" href={method.href} target="_blank" rel="noreferrer">
+              {method.label}{method.value ? ` · ${method.value}` : ""}
+            </a>
+          ) : (
+            <span class="tag">{method.label} · {method.value}</span>
+          )
+        )}
+      </div>
+    ) : (
+      <p class="meta">尚未配置打赏渠道。填写 `.env` 后会自动显示。</p>
+    )}
+  </div>
+
+  <div class="integration-block">
+    <h3>评论</h3>
+    {integrations.giscus.enabled ? (
+      <script
+        src="https://giscus.app/client.js"
+        data-repo={integrations.giscus.repo}
+        data-repo-id={integrations.giscus.repoId}
+        data-category={integrations.giscus.category}
+        data-category-id={integrations.giscus.categoryId}
+        data-mapping={integrations.giscus.mapping}
+        data-strict="0"
+        data-reactions-enabled={integrations.giscus.reactionsEnabled}
+        data-emit-metadata={integrations.giscus.emitMetadata}
+        data-input-position={integrations.giscus.inputPosition}
+        data-theme="preferred_color_scheme"
+        data-lang={integrations.giscus.lang}
+        crossorigin="anonymous"
+        async>
+      </script>
+    ) : (
+      <p class="meta">Giscus 未启用。配置 GitHub Discussions 参数后会自动挂载评论区。</p>
+    )}
+  </div>
+</section>
+

@@ -1,0 +1,31 @@
+---
+import { site } from "@/data/site";
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+const isActive = (href: string) =>
+  href === "/" ? pathname === "/" : pathname.startsWith(href);
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label="NexaBlog 首页">
+      <span class="brand-mark">N</span>
+      <span>{site.name}</span>
+    </a>
+    <nav class="nav desktop-nav" aria-label="主导航">
+      {site.nav.map((item) => (
+        <a href={item.href} aria-current={isActive(item.href) ? "page" : undefined}>
+          {item.label}
+        </a>
+      ))}
+      <a href="/search/" aria-current={isActive("/search/") ? "page" : undefined}>搜索</a>
+    </nav>
+    <button class="icon-button" type="button" data-theme-toggle aria-label="切换主题" title="切换主题：系统 / 浅色 / 深色">
+      <span data-theme-icon>◐</span>
+    </button>
+  </div>
+</header>
