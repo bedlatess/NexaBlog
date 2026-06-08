@@ -7,6 +7,8 @@ const preview = document.querySelector<HTMLElement>("[data-admin-preview]");
 const saveButton = document.querySelector<HTMLButtonElement>("[data-admin-save]");
 const publishButton = document.querySelector<HTMLButtonElement>("[data-admin-publish]");
 const unpublishButton = document.querySelector<HTMLButtonElement>("[data-admin-unpublish]");
+const viewPostLink = document.querySelector<HTMLAnchorElement>("[data-admin-view-post]");
+const copyLinkButton = document.querySelector<HTMLButtonElement>("[data-admin-copy-link]");
 const localDraftPanel = document.querySelector<HTMLElement>("[data-admin-local-draft]");
 const localDraftMessage = document.querySelector<HTMLElement>("[data-admin-local-draft-message]");
 const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-restore-draft]");
@@ -47,6 +49,10 @@ function getPublicPostUrl(slug: string) {
   return `/articles/${encodeURIComponent(slug)}/`;
 }
 
+function getAbsolutePostUrl(slug: string) {
+  return new URL(getPublicPostUrl(slug), window.location.origin).toString();
+}
+
 function setSaving(saving: boolean) {
   if (saveButton) {
     saveButton.disabled = saving;
@@ -59,6 +65,21 @@ function setSaving(saving: boolean) {
   if (unpublishButton) {
     unpublishButton.disabled = saving;
     unpublishButton.textContent = saving ? "下线中..." : "下线为草稿";
+  }
+}
+
+function updatePublishedActions(post: AdminPost | null) {
+  const isPublished = Boolean(post && !post.draft && post.published_at);
+  if (viewPostLink) {
+    viewPostLink.hidden = !isPublished;
+    if (post) viewPostLink.href = getPublicPostUrl(post.slug);
+  }
+  if (copyLinkButton) {
+    copyLinkButton.hidden = !isPublished;
+    copyLinkButton.dataset.postUrl = post && isPublished ? getAbsolutePostUrl(post.slug) : "";
+  }
+  if (unpublishButton) {
+    unpublishButton.hidden = !isPublished;
   }
 }
 
@@ -422,6 +443,7 @@ function fill(post: AdminPost) {
   if (fields.featured) fields.featured.checked = post.featured;
   updatePreview();
   updatePreflight();
+  updatePublishedActions(post);
 }
 
 async function ensureSession({ redirect = true } = {}) {
@@ -479,6 +501,16 @@ publishButton?.addEventListener("click", () => {
   setMessage("准备发布文章，正在提交表单...");
   setDebug("发布按钮 click 已触发，已自动取消草稿状态。");
   form?.requestSubmit();
+});
+copyLinkButton?.addEventListener("click", async () => {
+  const url = copyLinkButton.dataset.postUrl;
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    setMessage("前台链接已复制。", "success");
+  } catch {
+    setMessage(`无法自动复制，请手动复制：${url}`, "error");
+  }
 });
 unpublishButton?.addEventListener("click", () => {
   if (fields.draft) fields.draft.checked = true;
@@ -586,6 +618,7 @@ form?.addEventListener("submit", async (event) => {
     setDebug(`Supabase 写入成功，id=${data?.id ?? postId ?? "unknown"}。`);
     clearLocalDraft();
     currentPost = data as AdminPost;
+    updatePublishedActions(currentPost);
     if (!postId && data?.id) {
       postId = data.id;
       window.history.replaceState({}, "", `/admin/posts/edit/?id=${encodeURIComponent(data.id)}`);

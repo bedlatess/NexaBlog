@@ -51,6 +51,8 @@ const { mode } = Astro.props;
       <button class="button" type="submit" data-admin-save>{mode === "new" ? "创建草稿" : "保存修改"}</button>
       <button class="button secondary-button" type="button" data-admin-publish>发布文章</button>
       <a class="tag" href="/admin/">返回后台</a>
+      <a class="tag" href="#" data-admin-view-post hidden>查看前台</a>
+      <button class="tag" type="button" data-admin-copy-link hidden>复制链接</button>
       {mode === "edit" && (
         <>
           <button class="tag warning-action" type="button" data-admin-unpublish>下线为草稿</button>
