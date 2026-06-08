@@ -1,5 +1,9 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getPublishedPosts, getAllTags } from "@/lib/content";
+
+const posts = await getPublishedPosts();
+const tags = getAllTags(posts);
 ---
 
 <BaseLayout title="关于 - NexaBlog" description="关于 NexaBlog 的设计原则和路线。">
@@ -17,6 +21,18 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         <li>浅色和深色主题都保持高对比度。</li>
         <li>动效短、轻、可感知，但不打扰阅读。</li>
       </ul>
+      <h2>技术栈</h2>
+      <ul>
+        <li>框架：Astro — 零 JS 输出的静态站点生成器</li>
+        <li>后端增强：Supabase — 数据库、认证、文件存储</li>
+        <li>评论：Giscus — 基于 GitHub Discussions</li>
+        <li>统计：Plausible — 隐私友好的轻量分析</li>
+        <li>部署：Vercel — 全球 CDN 分发</li>
+      </ul>
+      <h2>站点数据</h2>
+      <p>
+        当前共有 {posts.length} 篇文章，覆盖 {tags.length} 个标签。全站静态构建，使用 <kbd>⌘K</kbd> 快速搜索。
+      </p>
       <h2>路线</h2>
       <p>
         当前版本已经完成静态博客核心、Supabase 后台和自动发布链路。接下来会继续打磨评论、统计、打赏、备份和更完整的内容编辑体验。

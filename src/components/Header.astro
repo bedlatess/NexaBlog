@@ -22,7 +22,9 @@ const isActive = (href: string) =>
           {item.label}
         </a>
       ))}
-      <a href="/search/" aria-current={isActive("/search/") ? "page" : undefined}>搜索</a>
+      <a href="/search/" aria-current={isActive("/search/") ? "page" : undefined}>
+        搜索 <kbd class="kbd-hint">⌘K</kbd>
+      </a>
     </nav>
     <button class="icon-button" type="button" data-theme-toggle aria-label="切换主题" title="切换主题：系统 / 浅色 / 深色">
       <span data-theme-icon>◐</span>

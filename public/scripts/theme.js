@@ -39,4 +39,15 @@
   });
 
   setMode(getMode());
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      if (window.location.pathname !== "/search/") {
+        window.location.href = "/search/";
+      } else {
+        document.querySelector("[data-search-input]")?.focus();
+      }
+    }
+  });
 })();

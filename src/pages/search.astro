@@ -6,14 +6,14 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   <section class="narrow">
     <p class="eyebrow">Search</p>
     <h1>搜索文章</h1>
-    <p class="hero-copy">静态索引，本地过滤。没有后端请求，也没有追踪。</p>
+    <p class="hero-copy">静态索引，本地过滤。支持多词搜索、键盘上下选择。</p>
 
-    <div class="search-box">
-      <input data-search-input type="search" placeholder="输入关键词，例如：静态、设计、Markdown" autocomplete="off" />
+    <div class="search-box" role="search">
+      <input data-search-input type="search" placeholder="输入关键词，例如：静态 设计 Markdown" autocomplete="off" aria-label="搜索文章" />
       <button class="button" type="button">搜索</button>
     </div>
-    <p class="meta" data-search-count>加载索引中</p>
-    <div class="article-grid" data-search-results style="margin-top: var(--space-6)"></div>
+    <p class="meta" data-search-count aria-live="polite">加载索引中</p>
+    <div class="article-grid" data-search-results style="margin-top: var(--space-6)" role="list"></div>
   </section>
   <script src="/scripts/search.js" defer></script>
 </BaseLayout>

@@ -1,5 +1,9 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getPublishedPosts, postUrl } from "@/lib/content";
+
+const posts = await getPublishedPosts();
+const random = posts[Math.floor(Math.random() * posts.length)];
 ---
 
 <BaseLayout title="页面不存在 - NexaBlog" description="这个页面不存在。">
@@ -12,6 +16,13 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
       <a class="tag" href="/search/">搜索</a>
       <a class="tag" href="/">回首页</a>
     </div>
+    {random && (
+      <div class="quiet-panel" style="margin-top: var(--space-8)">
+        <p class="meta">也许你会感兴趣</p>
+        <h3 style="margin-top: var(--space-2)"><a href={postUrl(random)}>{random.data.title}</a></h3>
+        <p class="meta">{random.data.description}</p>
+      </div>
+    )}
   </section>
 </BaseLayout>
 

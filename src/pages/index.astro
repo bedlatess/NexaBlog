@@ -3,15 +3,29 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import ArticleCard from "@/components/ArticleCard.astro";
 import { site } from "@/data/site";
 import { getAllTags, getPublishedPosts, formatDate, getReadingTime, postUrl } from "@/lib/content";
-import { tagSlug } from "@/lib/tags";
 
 const posts = await getPublishedPosts();
 const featured = posts.find((post) => post.data.featured) ?? posts[0];
 const recent = posts.filter((post) => post.id !== featured?.id).slice(0, 4);
 const tags = getAllTags(posts).slice(0, 10);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: site.name,
+  description: site.description,
+  url: site.url,
+  author: { "@type": "Person", name: site.author },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${site.url}/search/?q={search_term_string}`,
+    "query-input": "required name=search_term_string"
+  }
+};
 ---
 
 <BaseLayout title={site.title} description={site.description}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
   <section class="container hero">
     <div>
       <p class="eyebrow">Nexa Minimal / Static First</p>
@@ -70,11 +84,15 @@ const tags = getAllTags(posts).slice(0, 10);
 
   <section class="container">
     <div class="quiet-panel" style="margin-top: var(--space-12)">
-      <p class="eyebrow">V1 Boundary</p>
-      <h2>静态核心已经能独立工作。</h2>
+      <p class="eyebrow">Subscribe</p>
+      <h2>保持关注</h2>
       <p>
-        当前版本优先完成发布、阅读、发现和归档。后续接入 Supabase 后台时，只需要补充写入与同步层，不需要重做公开站点。
+        通过 RSS 订阅获取最新文章。无需账号，没有算法，文章直达你的阅读器。
       </p>
+      <div class="tag-list" style="margin-top: var(--space-4)">
+        <a class="tag" href="/rss.xml">RSS 订阅</a>
+        <a class="tag" href="/about/">了解更多</a>
+      </div>
     </div>
   </section>
 </BaseLayout>

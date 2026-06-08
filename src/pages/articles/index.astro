@@ -4,6 +4,14 @@ import ArticleCard from "@/components/ArticleCard.astro";
 import { getPublishedPosts } from "@/lib/content";
 
 const posts = await getPublishedPosts();
+
+const grouped = posts.reduce<Record<number, typeof posts>>((acc, post) => {
+  const year = post.data.published.getFullYear();
+  (acc[year] ??= []).push(post);
+  return acc;
+}, {});
+
+const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
 ---
 
 <BaseLayout title="全部文章 - NexaBlog" description="NexaBlog 的文章归档。">
@@ -12,9 +20,14 @@ const posts = await getPublishedPosts();
     <h1>全部文章</h1>
     <p class="hero-copy">按照发布时间倒序排列。这里保持传统归档的确定感，不用无限滚动把读者困在页面里。</p>
 
-    <div class="article-grid" style="margin-top: var(--space-8)">
-      {posts.map((post) => <ArticleCard post={post} />)}
-    </div>
+    {years.map((year) => (
+      <div style="margin-top: var(--space-8)">
+        <h2 class="archive-year">{year}</h2>
+        <div class="article-grid">
+          {grouped[year].map((post) => <ArticleCard post={post} />)}
+        </div>
+      </div>
+    ))}
   </section>
 </BaseLayout>
 

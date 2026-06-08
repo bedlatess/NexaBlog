@@ -23,6 +23,21 @@
     backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
+  const progressBar = document.querySelector("[data-reading-progress]");
+  if (progressBar) {
+    const article = document.querySelector("article");
+    if (article) {
+      const updateProgress = () => {
+        const rect = article.getBoundingClientRect();
+        const total = article.offsetHeight - window.innerHeight;
+        const progress = Math.min(100, Math.max(0, (-rect.top / total) * 100));
+        progressBar.style.width = `${progress}%`;
+      };
+      window.addEventListener("scroll", updateProgress, { passive: true });
+      updateProgress();
+    }
+  }
+
   const tocLinks = [...document.querySelectorAll(".toc a")];
   const headings = tocLinks
     .map((link) => document.getElementById(link.getAttribute("href").slice(1)))
