@@ -116,7 +116,8 @@ const checks = [
 
     <section class="quiet-panel">
       <p class="eyebrow">Deployment</p>
-      <h2>部署准备状态</h2>
+      <h2>发布链路状态</h2>
+      <p class="meta">当前生产构建命令：<code>{deployment.buildCommand}</code></p>
       <div class="admin-list">
         {deployment.checks.map((check) => (
           <div class="admin-row">
@@ -128,6 +129,11 @@ const checks = [
           </div>
         ))}
       </div>
+      <ol class="admin-steps publish-flow">
+        {deployment.publishFlow.map((step) => (
+          <li>{step}</li>
+        ))}
+      </ol>
     </section>
 
     <section class="quiet-panel">
