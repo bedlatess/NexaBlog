@@ -1,0 +1,142 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { deployment } from "@/data/deployment";
+import { integrationSetup } from "@/data/integrations";
+import { site } from "@/data/site";
+
+const siteFields = [
+  ["站点名称", site.name],
+  ["标题", site.title],
+  ["描述", site.description],
+  ["生产 URL", site.url],
+  ["作者", site.author],
+  ["语言", site.locale]
+];
+
+const envTemplate = [
+  "# Site",
+  `PUBLIC_SITE_URL=${site.url}`,
+  "",
+  "# Supabase Admin",
+  "PUBLIC_SUPABASE_URL=",
+  "PUBLIC_SUPABASE_ANON_KEY=",
+  "PUBLIC_ADMIN_EMAIL=",
+  "",
+  "# Plausible",
+  "PUBLIC_PLAUSIBLE_DOMAIN=",
+  "",
+  "# Giscus",
+  "PUBLIC_GISCUS_REPO=",
+  "PUBLIC_GISCUS_REPO_ID=",
+  "PUBLIC_GISCUS_CATEGORY=",
+  "PUBLIC_GISCUS_CATEGORY_ID=",
+  "PUBLIC_GISCUS_MAPPING=pathname",
+  "PUBLIC_GISCUS_REACTIONS=1",
+  "PUBLIC_GISCUS_METADATA=0",
+  "PUBLIC_GISCUS_INPUT_POSITION=bottom",
+  "PUBLIC_GISCUS_LANG=zh-CN"
+].join("\n");
+---
+
+<BaseLayout title="后台设置 - NexaBlog" description="NexaBlog 后台设置与部署配置清单。">
+  <section class="container admin-shell">
+    <div>
+      <p class="eyebrow">Settings</p>
+      <h1>后台设置</h1>
+      <p class="hero-copy">这里集中展示站点配置、动态集成和发布链路。当前版本以环境变量和代码配置为准，后续可接入 Supabase settings 表保存。</p>
+    </div>
+
+    <div class="admin-actions">
+      <a class="tag" href="/admin/">返回后台</a>
+      <a class="tag" href="/admin/posts/new/">新建文章</a>
+    </div>
+
+    <section class="quiet-panel">
+      <div class="section-head" style="margin: 0 0 var(--space-4)">
+        <div>
+          <p class="eyebrow">Site</p>
+          <h2>站点信息</h2>
+        </div>
+        <span class="status-pill">只读</span>
+      </div>
+      <div class="settings-grid">
+        {siteFields.map(([label, value]) => (
+          <div class="settings-field">
+            <small>{label}</small>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="quiet-panel">
+      <div class="section-head" style="margin: 0 0 var(--space-4)">
+        <div>
+          <p class="eyebrow">Integrations</p>
+          <h2>集成变量</h2>
+        </div>
+        <button class="tag" type="button" data-settings-copy="#settings-env-template">复制模板</button>
+      </div>
+      <div class="integration-setup-grid">
+        {integrationSetup.map((group) => (
+          <div class="integration-setup-card">
+            <div class="admin-row-actions" style="justify-content: space-between">
+              <strong>{group.label}</strong>
+              <span class={`status-pill ${group.status === "待配置" ? "is-muted" : ""}`}>{group.status}</span>
+            </div>
+            <p class="meta">{group.summary}</p>
+            {group.required.length > 0 && (
+              <>
+                <small class="label">必填</small>
+                <div class="config-chip-list">
+                  {group.required.map((item) => (
+                    <code class={group.missing.includes(item) ? "is-missing" : ""}>{item}</code>
+                  ))}
+                </div>
+              </>
+            )}
+            {group.optional.length > 0 && (
+              <>
+                <small class="label">可选</small>
+                <div class="config-chip-list">
+                  {group.optional.map((item) => <code>{item}</code>)}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+      <pre class="settings-template" id="settings-env-template"><code>{envTemplate}</code></pre>
+      <p class="meta" data-settings-message>设置页已加载。</p>
+    </section>
+
+    <section class="quiet-panel">
+      <p class="eyebrow">Deployment</p>
+      <h2>发布配置</h2>
+      <div class="admin-list">
+        <div class="admin-row">
+          <span>
+            <strong>生产构建命令</strong>
+            <small>{deployment.buildCommand}</small>
+          </span>
+          <span class="status-pill">已配置</span>
+        </div>
+        <div class="admin-row">
+          <span>
+            <strong>生产 URL</strong>
+            <small>{deployment.siteUrl}</small>
+          </span>
+          <span class={`status-pill ${deployment.isProductionUrlReady ? "" : "is-muted"}`}>
+            {deployment.isProductionUrlReady ? "已配置" : "待配置"}
+          </span>
+        </div>
+      </div>
+      <ol class="admin-steps publish-flow">
+        {deployment.publishFlow.map((step) => <li>{step}</li>)}
+      </ol>
+    </section>
+  </section>
+  <script>
+    import "@/scripts/admin-settings";
+  </script>
+</BaseLayout>

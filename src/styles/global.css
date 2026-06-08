@@ -609,6 +609,41 @@ h3 {
   color: #d97706;
 }
 
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.settings-field {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--color-bg-secondary) 76%, transparent);
+}
+
+.settings-field small {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+.settings-field strong {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.settings-template {
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  background: var(--color-code-bg);
+  font-size: 0.8125rem;
+}
+
 .admin-shell {
   display: grid;
   gap: var(--space-8);
@@ -1251,6 +1286,10 @@ h3 {
 
   .segmented-control button {
     flex: 1;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-row,
