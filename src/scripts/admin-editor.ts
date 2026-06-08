@@ -6,6 +6,7 @@ const debug = document.querySelector<HTMLElement>("[data-admin-editor-debug]");
 const preview = document.querySelector<HTMLElement>("[data-admin-preview]");
 const saveButton = document.querySelector<HTMLButtonElement>("[data-admin-save]");
 const publishButton = document.querySelector<HTMLButtonElement>("[data-admin-publish]");
+const unpublishButton = document.querySelector<HTMLButtonElement>("[data-admin-unpublish]");
 const localDraftPanel = document.querySelector<HTMLElement>("[data-admin-local-draft]");
 const localDraftMessage = document.querySelector<HTMLElement>("[data-admin-local-draft-message]");
 const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-restore-draft]");
@@ -54,6 +55,10 @@ function setSaving(saving: boolean) {
   if (publishButton) {
     publishButton.disabled = saving;
     publishButton.textContent = saving ? "发布中..." : "发布文章";
+  }
+  if (unpublishButton) {
+    unpublishButton.disabled = saving;
+    unpublishButton.textContent = saving ? "下线中..." : "下线为草稿";
   }
 }
 
@@ -475,6 +480,13 @@ publishButton?.addEventListener("click", () => {
   setDebug("发布按钮 click 已触发，已自动取消草稿状态。");
   form?.requestSubmit();
 });
+unpublishButton?.addEventListener("click", () => {
+  if (fields.draft) fields.draft.checked = true;
+  updatePreflight();
+  setMessage("准备下线文章并保存为草稿...");
+  setDebug("下线按钮 click 已触发，已自动勾选草稿状态。");
+  form?.requestSubmit();
+});
 
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -567,7 +579,7 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const publishMessage = isDraft
-      ? "草稿已保存，不会触发前台发布。"
+      ? "草稿已保存；如果此前已发布，Vercel 会自动重新部署并从前台移除。"
       : `已发布，Vercel 会自动重新部署。部署 Ready 后可访问 ${getPublicPostUrl(slug)}`;
     const slugMessage = slug === requestedSlug ? "" : `Slug 已自动改为 ${slug}。`;
     setMessage(`${slugMessage}${publishMessage}`, "success");

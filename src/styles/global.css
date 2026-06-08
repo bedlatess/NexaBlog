@@ -849,6 +849,11 @@ h3 {
   color: #dc2626;
 }
 
+.warning-action {
+  border-color: color-mix(in srgb, #d97706 45%, var(--color-border));
+  color: #d97706;
+}
+
 .admin-check {
   display: inline-flex;
   align-items: center;

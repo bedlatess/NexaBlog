@@ -52,7 +52,10 @@ const { mode } = Astro.props;
       <button class="button secondary-button" type="button" data-admin-publish>发布文章</button>
       <a class="tag" href="/admin/">返回后台</a>
       {mode === "edit" && (
-        <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>
+        <>
+          <button class="tag warning-action" type="button" data-admin-unpublish>下线为草稿</button>
+          <button class="tag danger-action" type="button" data-admin-delete>删除文章</button>
+        </>
       )}
     </div>
     <div class="admin-publish-note" data-admin-publish-note>
