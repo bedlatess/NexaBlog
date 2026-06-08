@@ -1,261 +1,96 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { getAllTags, getPublishedPosts, formatDate, postUrl } from "@/lib/content";
-import { integrations, donationMethods, integrationSetup, integrationStatus } from "@/data/integrations";
-import { deployment } from "@/data/deployment";
-
-const posts = await getPublishedPosts();
-const tags = getAllTags(posts);
-const latest = posts[0];
-
-const checks = [
-  {
-    label: "Supabase",
-    status: integrations.supabase.enabled ? "已配置" : "待配置",
-    detail: integrations.supabase.enabled ? integrations.supabase.url : "填写 PUBLIC_SUPABASE_URL 和 PUBLIC_SUPABASE_ANON_KEY"
-  },
-  {
-    label: "Giscus",
-    status: integrations.giscus.enabled ? "已启用" : "待配置",
-    detail: integrations.giscus.enabled
-      ? integrations.giscus.repo
-      : `缺少：${integrationStatus.giscusMissing.join("、")}`
-  },
-  {
-    label: "Plausible",
-    status: integrations.plausible.enabled ? "已启用" : "待配置",
-    detail: integrations.plausible.enabled ? integrations.plausible.domain : "填写 PUBLIC_PLAUSIBLE_DOMAIN"
-  },
-  {
-    label: "打赏",
-    status: donationMethods.length ? "已配置" : "待配置",
-    detail: donationMethods.length
-      ? `已启用：${integrationStatus.donationConfigured.join("、")}`
-      : `可选渠道：${integrationStatus.donationAvailable.join("、")}`
-  }
-];
+import { integrations } from "@/data/integrations";
 ---
 
-<BaseLayout title="后台 - NexaBlog" description="NexaBlog 的动态增强控制台。">
+<BaseLayout title="后台 - NexaBlog" description="NexaBlog 管理后台">
   <section class="container admin-shell">
-    <div>
-      <p class="eyebrow">Admin</p>
-      <h1>后台控制台</h1>
-      <p class="hero-copy">
-        这里同时显示静态站点状态和 Supabase 真实文章。发布文章后，数据库触发器会通知 Vercel 重新构建，前台会在部署完成后更新。
-      </p>
-    </div>
-
-    <div class="admin-stats">
-      <div class="stat-card">
-        <span class="label">文章</span>
-        <strong>{posts.length}</strong>
+    <div class="admin-header">
+      <div>
+        <p class="eyebrow">Admin</p>
+        <h1>文章管理</h1>
       </div>
-      <div class="stat-card">
-        <span class="label">标签</span>
-        <strong>{tags.length}</strong>
+      <div class="tag-list">
+        <a class="button" href="/admin/posts/new/">新建文章</a>
+        <a class="tag" href="/" target="_blank">查看前台</a>
       </div>
-      <div class="stat-card">
-        <span class="label">最近更新</span>
-        <strong>{latest ? formatDate(latest.data.updated ?? latest.data.published) : "-"}</strong>
-      </div>
-    </div>
-
-    <div class="admin-grid">
-      <section class="quiet-panel">
-        <p class="eyebrow">Content</p>
-        <h2>内容管理预览</h2>
-        <div class="admin-list">
-          {posts.map((post) => (
-            <a href={postUrl(post)} class="admin-row">
-              <span>
-                <strong>{post.data.title}</strong>
-                <small>{post.data.description}</small>
-              </span>
-              <span class="meta">{formatDate(post.data.published)}</span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section class="quiet-panel">
-        <p class="eyebrow">Integrations</p>
-        <h2>动态增强状态</h2>
-        <div class="admin-list">
-          {checks.map((check) => (
-            <div class="admin-row">
-              <span>
-                <strong>{check.label}</strong>
-                <small>{check.detail}</small>
-              </span>
-              <span class={`status-pill ${check.status === "待配置" ? "is-muted" : ""}`}>{check.status}</span>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
 
     <section class="quiet-panel" data-admin-live>
-      <div class="section-head" style="margin: 0 0 var(--space-4)">
+      <div class="admin-header" style="margin: 0 0 var(--space-6)">
         <div>
-          <p class="eyebrow">Supabase Live</p>
-          <h2>真实文章管理</h2>
-          <p class="meta" data-admin-live-message>等待 Supabase 配置。</p>
-          <p class="meta">当前会话：<span data-admin-session>未登录</span></p>
+          <p class="meta" data-admin-live-message>正在连接...</p>
+          <p class="meta">登录账号：<span data-admin-session>未登录</span></p>
         </div>
         <div class="tag-list">
-          <a class="tag" href="/admin/settings/">后台设置</a>
-          <a class="tag" href="/admin/posts/new/">新建文章</a>
           <button class="tag" type="button" data-admin-export-json>导出 JSON</button>
           <button class="tag" type="button" data-admin-export-markdown>导出 Markdown</button>
           <button class="tag" type="button" data-admin-import-json>导入 JSON</button>
           <input type="file" accept="application/json,.json" data-admin-import-file hidden />
-          <button class="icon-button" type="button" data-admin-logout aria-label="退出登录" title="退出登录">↩</button>
+          <button class="tag warning-action" type="button" data-admin-logout>退出登录</button>
         </div>
       </div>
+
+      <div class="admin-stats-row" aria-label="文章统计">
+        <div class="stat-card">
+          <small>总计</small>
+          <strong data-admin-live-count="total">-</strong>
+        </div>
+        <div class="stat-card">
+          <small>已发布</small>
+          <strong data-admin-live-count="published">-</strong>
+        </div>
+        <div class="stat-card">
+          <small>草稿</small>
+          <strong data-admin-live-count="draft">-</strong>
+        </div>
+        <div class="stat-card">
+          <small>最近更新</small>
+          <strong data-admin-live-count="latest">-</strong>
+        </div>
+      </div>
+
       <div class="admin-filter-bar" data-admin-post-filters>
-        <input class="admin-input" type="search" placeholder="搜索标题、slug、摘要或标签" data-admin-post-search />
+        <input class="admin-input" type="search" placeholder="搜索标题、摘要或标签" data-admin-post-search />
         <select class="admin-input" data-admin-post-tag aria-label="按标签筛选">
           <option value="all">全部标签</option>
         </select>
-        <select class="admin-input" data-admin-post-sort aria-label="文章排序">
+        <select class="admin-input" data-admin-post-sort aria-label="排序">
           <option value="updated-desc">最近更新</option>
           <option value="published-desc">最近发布</option>
           <option value="title-asc">标题 A-Z</option>
           <option value="draft-first">草稿优先</option>
         </select>
-        <div class="segmented-control" aria-label="文章状态筛选">
+        <div class="segmented-control" aria-label="文章状态">
           <button type="button" data-admin-post-status="all" aria-pressed="true">全部</button>
           <button type="button" data-admin-post-status="published">已发布</button>
           <button type="button" data-admin-post-status="draft">草稿</button>
         </div>
       </div>
-      <div class="admin-health-grid" aria-label="后台健康检查">
-        <span data-admin-health="config" data-state="pending">
-          <small>Supabase 配置</small>
-          <strong>检查中</strong>
-        </span>
-        <span data-admin-health="session" data-state="pending">
-          <small>登录会话</small>
-          <strong>检查中</strong>
-        </span>
-        <span data-admin-health="posts" data-state="pending">
-          <small>文章读取</small>
-          <strong>等待中</strong>
-        </span>
-        <span data-admin-health="backup" data-state="pending">
-          <small>备份工具</small>
-          <strong>等待中</strong>
-        </span>
-      </div>
-      <div class="admin-live-stats" aria-label="Supabase 实时文章统计">
-        <span>
-          <small>总数</small>
-          <strong data-admin-live-count="total">-</strong>
-        </span>
-        <span>
-          <small>已发布</small>
-          <strong data-admin-live-count="published">-</strong>
-        </span>
-        <span>
-          <small>草稿</small>
-          <strong data-admin-live-count="draft">-</strong>
-        </span>
-        <span>
-          <small>最近更新</small>
-          <strong data-admin-live-count="latest">-</strong>
-        </span>
-      </div>
+
       <div class="admin-list" data-admin-live-posts>
         <div class="admin-row">
           <span>
-            <strong>尚未连接 Supabase</strong>
-            <small>填写环境变量并执行 schema 后，这里会显示数据库文章。</small>
+            <strong>等待连接</strong>
+            <small>正在读取文章列表...</small>
           </span>
         </div>
       </div>
     </section>
 
-    <section class="quiet-panel">
-      <p class="eyebrow">Deployment</p>
-      <h2>发布链路状态</h2>
-      <p class="meta">当前生产构建命令：<code>{deployment.buildCommand}</code></p>
-      <div class="admin-list">
-        {deployment.checks.map((check) => (
-          <div class="admin-row">
-            <span>
-              <strong>{check.label}</strong>
-              <small>{check.detail}</small>
-            </span>
-            <span class={`status-pill ${check.status === "待配置" ? "is-muted" : ""}`}>{check.status}</span>
-          </div>
-        ))}
-      </div>
-      <ol class="admin-steps publish-flow">
-        {deployment.publishFlow.map((step) => (
-          <li>{step}</li>
-        ))}
-      </ol>
-      <div class="deploy-troubleshooting">
-        <div class="admin-row-actions" style="justify-content: space-between">
-          <h3>发布失败排查</h3>
-          <button class="tag" type="button" data-admin-copy-diagnostics>复制诊断信息</button>
-        </div>
+    {!integrations.supabase.enabled && (
+      <section class="quiet-panel">
+        <p class="eyebrow">Setup</p>
+        <h2>首次配置</h2>
+        <p>后台需要 Supabase 才能工作。请按以下步骤配置：</p>
         <ol class="admin-steps">
-          {deployment.troubleshooting.map((step) => (
-            <li>{step}</li>
-          ))}
+          <li>在 <a href="https://supabase.com" target="_blank">supabase.com</a> 创建项目</li>
+          <li>在 Supabase SQL 编辑器执行 <code>supabase/schema.sql</code></li>
+          <li>在 Vercel 环境变量里添加 <code>PUBLIC_SUPABASE_URL</code> 和 <code>PUBLIC_SUPABASE_ANON_KEY</code></li>
+          <li>重新部署后回到这里登录</li>
         </ol>
-      </div>
-    </section>
-
-    <section class="quiet-panel">
-      <p class="eyebrow">Setup</p>
-      <h2>集成配置清单</h2>
-      <p class="meta">这些都是公开环境变量，只控制前台增强功能是否显示。填完后重新部署即可生效。</p>
-      <div class="integration-setup-grid">
-        {integrationSetup.map((group) => (
-          <div class="integration-setup-card">
-            <div class="admin-row-actions" style="justify-content: space-between">
-              <strong>{group.label}</strong>
-              <span class={`status-pill ${group.status === "待配置" ? "is-muted" : ""}`}>{group.status}</span>
-            </div>
-            <p class="meta">{group.summary}</p>
-            {group.required.length > 0 && (
-              <>
-                <small class="label">必填</small>
-                <div class="config-chip-list">
-                  {group.required.map((item) => (
-                    <code class={group.missing.includes(item) ? "is-missing" : ""}>{item}</code>
-                  ))}
-                </div>
-              </>
-            )}
-            {group.optional.length > 0 && (
-              <>
-                <small class="label">可选</small>
-                <div class="config-chip-list">
-                  {group.optional.map((item) => (
-                    <code>{item}</code>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-
-    <section class="quiet-panel">
-      <p class="eyebrow">Next</p>
-      <h2>下一步打磨方向</h2>
-      <ol class="admin-steps">
-        <li>接入 Supabase Storage 图片上传，减少手动复制图片 URL。</li>
-        <li>增加自动定时备份和 Vercel 部署失败告警。</li>
-        <li>把集成配置做成后台表单，减少手动改环境变量。</li>
-        <li>把后台设置页接入站点配置、友链和关于页。</li>
-      </ol>
-    </section>
+      </section>
+    )}
   </section>
   <script>
     import "@/scripts/admin-dashboard";
