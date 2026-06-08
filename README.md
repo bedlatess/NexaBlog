@@ -1,6 +1,6 @@
 # NexaBlog
 
-NexaBlog is a static-first personal blog built with Astro. V1 focuses on the public reading experience: fast pages, Markdown articles, tags, search, RSS, SEO, dark/light/system themes, and small progressive enhancements.
+NexaBlog is a static-first personal blog built with Astro and Supabase. It keeps the public site fast and static, while the admin can create, edit, publish, and delete posts through Supabase. Published database posts are pulled into the static build and can trigger Vercel redeploys automatically.
 
 ## Scripts
 
@@ -14,7 +14,7 @@ npm run check:production
 npm run preview
 ```
 
-Copy `.env.example` to `.env` when you want to enable comments, analytics, donations, or the future Supabase admin integration.
+Copy `.env.example` to `.env` when you want to enable Supabase admin, comments, analytics, or donations.
 
 ## Structure
 
@@ -36,22 +36,20 @@ Implemented in V1:
 - System/light/dark theme handling with persisted preference.
 - Code copy buttons, active table of contents, back-to-top, and mobile bottom navigation.
 
-Reserved for V2:
+Still reserved for a later pass:
 
-- Supabase Auth and PostgreSQL-backed article CRUD.
 - Automated backups.
 - Pagefind replacement for large search indexes.
 
 ## Dynamic Enhancement
 
-V2 groundwork is already present:
-
-- `/admin/` shows a static control console with content counts and integration status.
+- `/admin/` shows static build status plus live Supabase post management.
 - Giscus, Plausible, Supabase, and donation channels are controlled by public environment variables.
 - Article pages automatically show configured donation methods and load Giscus when ready.
-- `/admin/login/`, `/admin/posts/new/`, and `/admin/posts/edit/?id=...` provide a Supabase-backed admin skeleton.
+- `/admin/login/`, `/admin/posts/new/`, and `/admin/posts/edit/?id=...` provide Supabase-backed article CRUD.
 - `supabase/schema.sql` contains the first posts/settings schema and RLS policies.
 - `npm run sync:supabase` pulls published Supabase posts into `src/content/blog/generated/`.
+- `supabase/deploy-hook-trigger.sql` can trigger Vercel rebuilds when published posts change.
 
 See `docs/deployment.md` for the exact variables and deployment flow.
 
@@ -61,5 +59,5 @@ The project includes `vercel.json` and a production readiness script. Set `PUBLI
 
 ```bash
 npm run check:production
-npm run build
+npm run build:with-supabase
 ```

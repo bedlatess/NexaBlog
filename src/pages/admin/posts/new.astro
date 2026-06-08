@@ -8,7 +8,7 @@ import AdminEditorForm from "@/components/AdminEditorForm.astro";
     <div>
       <p class="eyebrow">New Post</p>
       <h1>新建文章</h1>
-      <p class="hero-copy">先写入 Supabase 草稿。公开站点仍由 Markdown 静态内容驱动，后续会补同步/发布链路。</p>
+      <p class="hero-copy">先保存为草稿，准备好后取消草稿状态即可发布。发布会触发 Vercel 重新构建，前台在部署完成后显示。</p>
     </div>
     <AdminEditorForm mode="new" />
   </section>
@@ -16,4 +16,3 @@ import AdminEditorForm from "@/components/AdminEditorForm.astro";
     import "@/scripts/admin-editor";
   </script>
 </BaseLayout>
-

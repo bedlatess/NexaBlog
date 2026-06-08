@@ -35,10 +35,10 @@ const checks = [
 <BaseLayout title="后台 - NexaBlog" description="NexaBlog 的动态增强控制台。">
   <section class="container admin-shell">
     <div>
-      <p class="eyebrow">Admin Preview</p>
+      <p class="eyebrow">Admin</p>
       <h1>后台控制台</h1>
       <p class="hero-copy">
-        这是 V2 的静态预览壳：公开站点已经可发布，后台会在 Supabase 配置完成后接入真实登录、草稿、预览和发布流程。
+        这里同时显示静态站点状态和 Supabase 真实文章。发布文章后，数据库触发器会通知 Vercel 重新构建，前台会在部署完成后更新。
       </p>
     </div>
 
@@ -132,12 +132,12 @@ const checks = [
 
     <section class="quiet-panel">
       <p class="eyebrow">Next</p>
-      <h2>下一步接入顺序</h2>
+      <h2>下一步打磨方向</h2>
       <ol class="admin-steps">
-        <li>把 `PUBLIC_SITE_URL` 改成真实生产域名，并运行 `npm run check:production`。</li>
-        <li>部署到 Vercel，确认首页、RSS、sitemap、搜索索引都能从生产域名访问。</li>
-        <li>创建 Supabase 项目，启用 Auth，并执行文档里的文章表 SQL。</li>
-        <li>把后台从静态预览壳升级为登录后的文章 CRUD 和 Markdown 预览。</li>
+        <li>补充更顺手的 Markdown 工具栏和图片上传流程。</li>
+        <li>接入 Giscus、Plausible 和打赏渠道。</li>
+        <li>增加数据库备份和发布失败告警。</li>
+        <li>把后台设置页接入站点配置、友链和关于页。</li>
       </ol>
     </section>
   </section>
