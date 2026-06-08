@@ -24,21 +24,44 @@ function escapeHtml(value: unknown) {
   })[char] ?? char);
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "未发布";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
 function renderPosts(posts: AdminPost[]) {
   if (!list) return;
   if (!posts.length) {
-    list.innerHTML = '<div class="admin-row"><span><strong>暂无 Supabase 文章</strong><small>可以先创建一篇草稿验证写入链路。</small></span></div>';
+    list.innerHTML = `
+      <div class="admin-row admin-empty-row">
+        <span>
+          <strong>暂无 Supabase 文章</strong>
+          <small>可以先创建一篇草稿验证写入链路。</small>
+        </span>
+        <a class="tag" href="/admin/posts/new/">新建文章</a>
+      </div>
+    `;
     return;
   }
 
   list.innerHTML = posts.map((post) => `
-    <a class="admin-row" href="/admin/posts/edit/?id=${encodeURIComponent(post.id)}">
+    <div class="admin-row admin-post-row">
       <span>
         <strong>${escapeHtml(post.title)}</strong>
-        <small>${escapeHtml(post.slug)} · ${escapeHtml(post.description)}</small>
+        <small>${escapeHtml(post.slug)} · 更新 ${formatDateTime(post.updated_at)}</small>
+        <small>${escapeHtml(post.description)}</small>
       </span>
-      <span class="status-pill ${post.draft ? "is-muted" : ""}">${post.draft ? "草稿" : "已发布"}</span>
-    </a>
+      <span class="admin-row-actions">
+        <span class="status-pill ${post.draft ? "is-muted" : ""}">${post.draft ? "草稿" : "已发布"}</span>
+        ${post.draft ? "" : `<a class="tag" href="/articles/${encodeURIComponent(post.slug)}/">前台</a>`}
+        <a class="tag" href="/admin/posts/edit/?id=${encodeURIComponent(post.id)}">编辑</a>
+      </span>
+    </div>
   `).join("");
 }
 
@@ -61,7 +84,8 @@ if (root) {
         setMessage(error.message, "error");
       } else {
         renderPosts((posts ?? []) as AdminPost[]);
-        setMessage("Supabase 文章读取成功。", "success");
+        const publishedCount = (posts ?? []).filter((post) => !post.draft).length;
+        setMessage(`Supabase 文章读取成功：${posts?.length ?? 0} 篇，已发布 ${publishedCount} 篇。`, "success");
       }
     }
   }
@@ -72,4 +96,3 @@ logoutButton?.addEventListener("click", async () => {
   await supabase.auth.signOut();
   window.location.assign("/admin/login/");
 });
-

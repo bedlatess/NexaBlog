@@ -34,6 +34,10 @@ function setDebug(text: string) {
   debug.textContent = `诊断：${text}`;
 }
 
+function getPublicPostUrl(slug: string) {
+  return `/articles/${encodeURIComponent(slug)}/`;
+}
+
 function setSaving(saving: boolean) {
   if (!saveButton) return;
   saveButton.disabled = saving;
@@ -235,7 +239,11 @@ form?.addEventListener("submit", async (event) => {
       return;
     }
 
-    setMessage(slug === requestedSlug ? "保存成功。" : `保存成功，Slug 已自动改为 ${slug}。`, "success");
+    const publishMessage = isDraft
+      ? "草稿已保存，不会触发前台发布。"
+      : `已发布，Vercel 会自动重新部署。部署 Ready 后可访问 ${getPublicPostUrl(slug)}`;
+    const slugMessage = slug === requestedSlug ? "" : `Slug 已自动改为 ${slug}。`;
+    setMessage(`${slugMessage}${publishMessage}`, "success");
     setDebug(`Supabase 写入成功，id=${data?.id ?? postId ?? "unknown"}。`);
     currentPost = data as AdminPost;
     if (!postId && data?.id) {
