@@ -14,7 +14,7 @@ if (!GITHUB_TOKEN || !GITHUB_REPOSITORY) fail("Missing GITHUB_TOKEN or GITHUB_RE
 
 // Fetch posts via PostgREST — no Supabase client needed, no WebSocket dep
 const res = await fetch(
-  `${PUBLIC_SUPABASE_URL}/rest/v1/posts?select=id,slug,title,description,body,tags,draft,featured,published_at,updated_at,cover_image&order=updated_at.desc`,
+  `${PUBLIC_SUPABASE_URL}/rest/v1/posts?select=id,slug,title,description,body,tags,draft,featured,published_at,updated_at&order=updated_at.desc`,
   {
     headers: {
       apikey: PUBLIC_SUPABASE_ANON_KEY,
