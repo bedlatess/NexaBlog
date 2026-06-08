@@ -1,10 +1,10 @@
 export const site = {
-  name: "NexaBlog",
-  title: "NexaBlog - 静态优先的个人写作系统",
+  name: "PAWN",
+  title: "PAWN - 产品、设计与工程",
   description:
-    "一个轻量、精致、静态优先的个人博客系统。写作、阅读、搜索和长期归档都保持克制而可靠。",
+    "独立开发者 PAWN 的写作空间。写产品思维、设计系统和工程美学的交叉地带。",
   url: import.meta.env.PUBLIC_SITE_URL ?? "https://nexablog.example.com",
-  author: "Nexa",
+  author: "PAWN",
   locale: "zh-CN",
   nav: [
     { href: "/", label: "首页" },
@@ -16,6 +16,6 @@ export const site = {
   ],
   socials: [
     { href: "/rss.xml", label: "RSS" },
-    { href: "https://github.com/", label: "GitHub" }
+    { href: "https://t.me/bedlate", label: "Telegram" }
   ]
 };
