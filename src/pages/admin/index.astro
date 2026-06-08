@@ -104,6 +104,14 @@ const checks = [
           <button class="icon-button" type="button" data-admin-logout aria-label="退出登录" title="退出登录">↩</button>
         </div>
       </div>
+      <div class="admin-filter-bar" data-admin-post-filters>
+        <input class="admin-input" type="search" placeholder="搜索标题、slug、摘要或标签" data-admin-post-search />
+        <div class="segmented-control" aria-label="文章状态筛选">
+          <button type="button" data-admin-post-status="all" aria-pressed="true">全部</button>
+          <button type="button" data-admin-post-status="published">已发布</button>
+          <button type="button" data-admin-post-status="draft">草稿</button>
+        </div>
+      </div>
       <div class="admin-list" data-admin-live-posts>
         <div class="admin-row">
           <span>
