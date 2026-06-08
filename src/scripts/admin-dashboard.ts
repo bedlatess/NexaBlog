@@ -7,6 +7,8 @@ const message = document.querySelector<HTMLElement>("[data-admin-live-message]")
 const logoutButton = document.querySelector<HTMLButtonElement>("[data-admin-logout]");
 const exportJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-export-json]");
 const exportMarkdownButton = document.querySelector<HTMLButtonElement>("[data-admin-export-markdown]");
+const importJsonButton = document.querySelector<HTMLButtonElement>("[data-admin-import-json]");
+const importJsonInput = document.querySelector<HTMLInputElement>("[data-admin-import-file]");
 const searchInput = document.querySelector<HTMLInputElement>("[data-admin-post-search]");
 const statusButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-admin-post-status]"));
 const liveCounts = {
@@ -24,6 +26,10 @@ let currentUserId: string | null = null;
 function setExportReady(ready: boolean) {
   if (exportJsonButton) exportJsonButton.disabled = !ready;
   if (exportMarkdownButton) exportMarkdownButton.disabled = !ready;
+}
+
+function setImportReady(ready: boolean) {
+  if (importJsonButton) importJsonButton.disabled = !ready;
 }
 
 function setMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
@@ -123,6 +129,93 @@ function exportMarkdownBackup() {
     .join("\n\n");
   downloadTextFile(`nexablog-posts-${getBackupStamp()}.md`, content);
   setMessage(`已导出 ${allPosts.length} 篇文章 Markdown 备份。`, "success");
+}
+
+function isBackupPost(value: unknown): value is Partial<AdminPost> & Pick<AdminPost, "slug" | "title" | "description" | "body"> {
+  if (!value || typeof value !== "object") return false;
+  const post = value as Record<string, unknown>;
+  return typeof post.slug === "string"
+    && typeof post.title === "string"
+    && typeof post.description === "string"
+    && typeof post.body === "string";
+}
+
+function normalizeBackupPost(post: Partial<AdminPost> & Pick<AdminPost, "slug" | "title" | "description" | "body">) {
+  return {
+    ...(post.id ? { id: post.id } : {}),
+    slug: post.slug,
+    title: post.title,
+    description: post.description,
+    body: post.body,
+    tags: Array.isArray(post.tags) ? post.tags.filter((tag): tag is string => typeof tag === "string") : [],
+    draft: Boolean(post.draft),
+    featured: Boolean(post.featured),
+    published_at: post.draft ? null : post.published_at ?? null,
+    author_id: currentUserId
+  };
+}
+
+async function readBackupFile(file: File) {
+  const raw = await file.text();
+  const parsed = JSON.parse(raw) as { posts?: unknown };
+  if (!Array.isArray(parsed.posts)) {
+    throw new Error("这不是 NexaBlog JSON 备份文件：缺少 posts 数组。");
+  }
+  const posts = parsed.posts.filter(isBackupPost);
+  if (!posts.length) {
+    throw new Error("备份文件里没有可导入的文章。");
+  }
+  if (posts.length !== parsed.posts.length) {
+    throw new Error("备份文件包含格式不完整的文章，导入已取消。");
+  }
+  return posts;
+}
+
+async function refreshPosts() {
+  if (!supabase) return;
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    setMessage(error.message, "error");
+    return;
+  }
+
+  allPosts = (posts ?? []) as AdminPost[];
+  setExportReady(allPosts.length > 0);
+  filterPosts();
+}
+
+async function importJsonBackup(file: File) {
+  if (!supabase || !currentUserId) return;
+
+  try {
+    const backupPosts = await readBackupFile(file);
+    const confirmed = window.confirm(`确认导入 ${backupPosts.length} 篇文章？同 id 的记录会被更新，同 slug 冲突时可能被 Supabase 拒绝。`);
+    if (!confirmed) return;
+
+    setImportReady(false);
+    setMessage(`正在导入 ${backupPosts.length} 篇文章...`);
+    const payload = backupPosts.map(normalizeBackupPost);
+    const { error } = await supabase
+      .from("posts")
+      .upsert(payload, { onConflict: "id" });
+
+    if (error) {
+      setMessage(`${error.message}${error.code ? ` (${error.code})` : ""}`, "error");
+      return;
+    }
+
+    setMessage(`已导入 ${backupPosts.length} 篇文章。`, "success");
+    await refreshPosts();
+  } catch (error) {
+    setMessage(error instanceof Error ? error.message : "导入失败，无法读取备份文件。", "error");
+  } finally {
+    setImportReady(true);
+    if (importJsonInput) importJsonInput.value = "";
+  }
 }
 
 function getNextSlug(baseSlug: string, takenSlugs: string[]) {
@@ -272,6 +365,7 @@ async function duplicatePost(postId: string, trigger: HTMLButtonElement) {
 
 if (root) {
   setExportReady(false);
+  setImportReady(false);
   if (!config.configured || !supabase) {
     setMessage("Supabase 尚未配置。填写 .env 后，这里会显示真实文章数据。", "error");
   } else {
@@ -280,20 +374,10 @@ if (root) {
       window.location.assign(`/admin/login/?next=${encodeURIComponent(window.location.pathname)}`);
     } else {
       currentUserId = data.session.user.id;
+      setImportReady(true);
       if (sessionLabel) sessionLabel.textContent = data.session.user.email ?? "已登录";
       setMessage("正在读取 Supabase 文章...");
-      const { data: posts, error } = await supabase
-        .from("posts")
-        .select("*")
-        .order("updated_at", { ascending: false });
-
-      if (error) {
-        setMessage(error.message, "error");
-      } else {
-        allPosts = (posts ?? []) as AdminPost[];
-        setExportReady(allPosts.length > 0);
-        filterPosts();
-      }
+      await refreshPosts();
     }
   }
 }
@@ -304,6 +388,12 @@ statusButtons.forEach((button) => {
 });
 exportJsonButton?.addEventListener("click", exportJsonBackup);
 exportMarkdownButton?.addEventListener("click", exportMarkdownBackup);
+importJsonButton?.addEventListener("click", () => importJsonInput?.click());
+importJsonInput?.addEventListener("change", () => {
+  const file = importJsonInput.files?.[0];
+  if (!file) return;
+  void importJsonBackup(file);
+});
 
 list?.addEventListener("click", (event) => {
   const target = event.target instanceof HTMLElement

@@ -91,6 +91,16 @@ PUBLIC_ADMIN_EMAIL=you@example.com
 The anon key is intentionally public. Do not use a service-role key in this frontend project. Access control must live in RLS policies.
 The included policies only allow users listed in `admin_users` to read drafts or write content.
 
+## Manual Content Backups
+
+The admin dashboard can export Supabase posts after login:
+
+- `导出 JSON` downloads a full structured backup that can be imported later.
+- `导出 Markdown` downloads a readable archive with frontmatter and body content.
+- `导入 JSON` accepts the JSON backup format exported by NexaBlog. Records with the same `id` are updated; new records are inserted. If a new record uses a slug that already exists under another id, Supabase will reject the import and show the conflict.
+
+For disaster recovery, keep the JSON backup. The Markdown export is mainly for human review, migration, and copy editing.
+
 The first schema is stored at:
 
 ```sql
