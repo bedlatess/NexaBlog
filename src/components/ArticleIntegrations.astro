@@ -9,8 +9,8 @@ const hasGiscus = integrations.giscus.enabled;
   <section class="quiet-panel integration-panel" style="margin-top: var(--space-12)">
     <div>
       <p class="eyebrow">Support</p>
-      <h2>打赏与讨论</h2>
-      <p>文章主体保持静态渲染，评论和打赏作为动态增强挂载。</p>
+      <h2>{hasDonation && hasGiscus ? "留言与支持" : hasGiscus ? "留下你的想法" : "支持创作"}</h2>
+      <p>{hasGiscus ? "读到这里，欢迎在下方留言交流。" : "如果这篇文章对你有帮助，可以请我喝杯咖啡。"}</p>
     </div>
 
     {hasDonation && (

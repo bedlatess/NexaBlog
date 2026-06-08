@@ -70,7 +70,17 @@ a {
 
 a:hover {
   color: var(--color-accent-hover);
+}
+
+.prose a {
   text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms ease-in-out;
+}
+
+.prose a:hover {
+  text-decoration-color: var(--color-accent);
 }
 
 button,
