@@ -212,8 +212,8 @@ docs/                  部署和集成文档
 - [x] 文章封面图支持
 - [x] 数据库自动备份到 GitHub
 - [x] 定时发布
-- [ ] 多作者角色权限
-- [ ] Pagefind 替换 JSON 搜索（适用于大量文章）
+- [x] Pagefind 全文搜索（替换 JSON 索引）
+- [ ] 多作者角色权限（SQL 已准备，前端权限判断待实现）
 - [ ] `npm create nexablog` 一键建站 CLI
 - [ ] 主题系统（替换设计 token 实现多主题）
 
