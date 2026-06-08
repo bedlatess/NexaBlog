@@ -101,6 +101,21 @@ The admin dashboard can export Supabase posts after login:
 
 For disaster recovery, keep the JSON backup. The Markdown export is mainly for human review, migration, and copy editing.
 
+## Supabase Storage Images
+
+The editor can upload post images to a public Supabase Storage bucket named `post-images`.
+
+Run the latest `supabase/schema.sql` in the Supabase SQL editor after pulling this version. It creates or updates the bucket, keeps images publicly readable, and only allows users listed in `admin_users` to upload, update, or delete objects.
+
+Supported upload types:
+
+- JPG
+- PNG
+- WebP
+- GIF
+
+The browser editor limits uploads to 5MB. After upload, NexaBlog inserts a Markdown image using the public Storage URL.
+
 The first schema is stored at:
 
 ```sql
@@ -157,4 +172,3 @@ Still reserved for the next implementation pass:
 
 - Role-based author permissions.
 - Rich Markdown editor toolbar.
-- Image upload/storage.

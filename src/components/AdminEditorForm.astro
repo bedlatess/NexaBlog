@@ -48,11 +48,16 @@ const { mode } = Astro.props;
           <span class="label">图片说明</span>
           <input class="admin-input" type="text" placeholder="图片描述" data-admin-image-alt />
         </label>
+        <label class="admin-image-upload">
+          <span class="label">上传图片</span>
+          <input class="admin-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-file />
+        </label>
         <div class="admin-row-actions">
+          <button class="tag" type="button" data-admin-image-upload>上传并插入</button>
           <button class="tag" type="button" data-admin-image-insert>插入图片</button>
           <button class="tag" type="button" data-admin-image-copy>复制 Markdown</button>
         </div>
-        <p class="meta" data-admin-image-message>建议使用 https 图片地址，或把图片放到站内 /assets/ 后引用。</p>
+        <p class="meta" data-admin-image-message>可上传到 Supabase Storage，或手动填写 https 图片地址、站内 /assets/ 路径。</p>
       </div>
       <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
       <div class="admin-editor-metrics" aria-label="写作状态">

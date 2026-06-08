@@ -939,6 +939,10 @@ h3 {
   margin-bottom: var(--space-3);
 }
 
+.admin-image-upload {
+  grid-column: 1 / -1;
+}
+
 .admin-image-tool .admin-row-actions,
 .admin-image-tool .meta {
   grid-column: 1 / -1;

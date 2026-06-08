@@ -35,6 +35,20 @@ create index if not exists posts_published_at_idx on posts (published_at desc);
 create index if not exists posts_draft_idx on posts (draft);
 create index if not exists posts_tags_idx on posts using gin (tags);
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'post-images',
+  'post-images',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
@@ -134,6 +148,18 @@ on admin_users for all
 to authenticated
 using (is_admin())
 with check (is_admin());
+
+drop policy if exists "Post images are public" on storage.objects;
+create policy "Post images are public"
+on storage.objects for select
+using (bucket_id = 'post-images');
+
+drop policy if exists "Admins can manage post images" on storage.objects;
+create policy "Admins can manage post images"
+on storage.objects for all
+to authenticated
+using (bucket_id = 'post-images' and is_admin())
+with check (bucket_id = 'post-images' and is_admin());
 
 insert into posts (slug, title, description, body, tags, draft, featured, published_at)
 values

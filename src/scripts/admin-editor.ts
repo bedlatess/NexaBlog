@@ -21,6 +21,8 @@ const deployStatusDetail = document.querySelector<HTMLElement>("[data-admin-depl
 const deployStatusLink = document.querySelector<HTMLAnchorElement>("[data-admin-deploy-view]");
 const imageUrlInput = document.querySelector<HTMLInputElement>("[data-admin-image-url]");
 const imageAltInput = document.querySelector<HTMLInputElement>("[data-admin-image-alt]");
+const imageFileInput = document.querySelector<HTMLInputElement>("[data-admin-image-file]");
+const uploadImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-upload]");
 const insertImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-insert]");
 const copyImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-copy]");
 const imageMessage = document.querySelector<HTMLElement>("[data-admin-image-message]");
@@ -39,6 +41,8 @@ let sessionReady = false;
 let hasUnsavedChanges = false;
 const editorVersion = "admin-editor-2026-06-07-2148";
 const localDraftKey = `nexablog:admin-draft:${postId ?? "new"}`;
+const imageBucket = "post-images";
+const maxImageBytes = 5 * 1024 * 1024;
 
 const fields = {
   slug: document.querySelector<HTMLInputElement>("[name='slug']"),
@@ -73,10 +77,20 @@ function isSupportedImageUrl(src: string) {
   return /^(https?:\/\/|\/)/i.test(src);
 }
 
+function isSupportedImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
+}
+
 function setImageMessage(text: string, tone: "muted" | "error" | "success" = "muted") {
   if (!imageMessage) return;
   imageMessage.textContent = text;
   imageMessage.dataset.tone = tone;
+}
+
+function setImageUploading(uploading: boolean) {
+  if (!uploadImageButton) return;
+  uploadImageButton.disabled = uploading;
+  uploadImageButton.textContent = uploading ? "上传中..." : "上传并插入";
 }
 
 function getImageMarkdown() {
@@ -102,6 +116,34 @@ function getImageMarkdown() {
 
 function countImages(markdown: string) {
   return Array.from(markdown.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)).length;
+}
+
+function getImageExtension(file: File) {
+  const fromName = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+  if (fromName && ["jpg", "jpeg", "png", "webp", "gif"].includes(fromName)) return fromName;
+  return ({
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif"
+  } as Record<string, string>)[file.type] ?? "jpg";
+}
+
+function getImageBaseName(file: File) {
+  const withoutExtension = file.name.replace(/\.[^.]+$/, "");
+  return withoutExtension
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "image";
+}
+
+function getImageObjectPath(file: File) {
+  const slug = trimmedFieldValue(fields.slug) || currentPost?.slug || "draft";
+  const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "draft";
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `${safeSlug}/${Date.now()}-${suffix}-${getImageBaseName(file)}.${getImageExtension(file)}`;
 }
 
 function updateEditorMetrics() {
@@ -473,6 +515,63 @@ function insertMarkdownSnippet(snippet: string) {
   markEditorDirty();
 }
 
+async function uploadSelectedImage() {
+  if (!supabase) {
+    setImageMessage("Supabase 尚未配置，无法上传图片。", "error");
+    return;
+  }
+
+  const file = imageFileInput?.files?.[0];
+  if (!file) {
+    setImageMessage("请先选择一张图片。", "error");
+    imageFileInput?.focus();
+    return;
+  }
+  if (!isSupportedImageFile(file)) {
+    setImageMessage("仅支持 JPG、PNG、WebP 或 GIF 图片。", "error");
+    return;
+  }
+  if (file.size > maxImageBytes) {
+    setImageMessage("图片不能超过 5MB。", "error");
+    return;
+  }
+  if (!(await ensureSession({ redirect: false }))) return;
+
+  try {
+    setImageUploading(true);
+    setImageMessage(`正在上传 ${file.name}...`);
+    const path = getImageObjectPath(file);
+    const { error } = await supabase.storage
+      .from(imageBucket)
+      .upload(path, file, {
+        cacheControl: "31536000",
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (error) {
+      setImageMessage(`上传失败：${error.message}。如果 bucket 不存在，请在 Supabase SQL editor 重新运行 supabase/schema.sql 的 Storage 段。`, "error");
+      setDebug(`Supabase Storage 上传失败：${error.message}`);
+      return;
+    }
+
+    const { data } = supabase.storage.from(imageBucket).getPublicUrl(path);
+    if (imageUrlInput) imageUrlInput.value = data.publicUrl;
+    if (imageAltInput && !imageAltInput.value.trim()) imageAltInput.value = getImageBaseName(file).replace(/-/g, " ");
+    const snippet = getImageMarkdown();
+    if (snippet) {
+      insertMarkdownSnippet(snippet);
+      setImageMessage("图片已上传并插入正文。", "success");
+      setDebug(`图片上传成功：${path}`);
+    }
+    if (imageFileInput) imageFileInput.value = "";
+  } catch (error) {
+    setImageMessage(error instanceof Error ? error.message : "图片上传失败。", "error");
+  } finally {
+    setImageUploading(false);
+  }
+}
+
 function renderInlineMarkdown(value: string) {
   return escapeHtml(value)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
@@ -653,6 +752,9 @@ form?.addEventListener("input", () => {
 });
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
   button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
+});
+uploadImageButton?.addEventListener("click", () => {
+  void uploadSelectedImage();
 });
 insertImageButton?.addEventListener("click", () => {
   const snippet = getImageMarkdown();
