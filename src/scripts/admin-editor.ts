@@ -5,6 +5,10 @@ const message = document.querySelector<HTMLElement>("[data-admin-editor-message]
 const debug = document.querySelector<HTMLElement>("[data-admin-editor-debug]");
 const preview = document.querySelector<HTMLElement>("[data-admin-preview]");
 const saveButton = document.querySelector<HTMLButtonElement>("[data-admin-save]");
+const localDraftPanel = document.querySelector<HTMLElement>("[data-admin-local-draft]");
+const localDraftMessage = document.querySelector<HTMLElement>("[data-admin-local-draft-message]");
+const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-restore-draft]");
+const discardDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-discard-draft]");
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 const params = new URLSearchParams(window.location.search);
@@ -12,6 +16,7 @@ let postId = params.get("id");
 let currentPost: AdminPost | null = null;
 let sessionReady = false;
 const editorVersion = "admin-editor-2026-06-07-2148";
+const localDraftKey = `nexablog:admin-draft:${postId ?? "new"}`;
 
 const fields = {
   slug: document.querySelector<HTMLInputElement>("[name='slug']"),
@@ -102,6 +107,85 @@ function trimmedFieldValue(field: HTMLInputElement | HTMLTextAreaElement | null)
   return fieldValue(field).trim();
 }
 
+function getFormSnapshot() {
+  return {
+    slug: fieldValue(fields.slug),
+    title: fieldValue(fields.title),
+    description: fieldValue(fields.description),
+    tags: fieldValue(fields.tags),
+    body: fieldValue(fields.body),
+    draft: fields.draft?.checked ?? true,
+    featured: fields.featured?.checked ?? false,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function hasMeaningfulDraft(snapshot: ReturnType<typeof getFormSnapshot>) {
+  return Boolean(
+    snapshot.slug.trim()
+    || snapshot.title.trim()
+    || snapshot.description.trim()
+    || snapshot.tags.trim()
+    || snapshot.body.trim()
+  );
+}
+
+function applySnapshot(snapshot: ReturnType<typeof getFormSnapshot>) {
+  if (fields.slug) fields.slug.value = snapshot.slug;
+  if (fields.title) fields.title.value = snapshot.title;
+  if (fields.description) fields.description.value = snapshot.description;
+  if (fields.tags) fields.tags.value = snapshot.tags;
+  if (fields.body) fields.body.value = snapshot.body;
+  if (fields.draft) fields.draft.checked = snapshot.draft;
+  if (fields.featured) fields.featured.checked = snapshot.featured;
+  updatePreview();
+}
+
+function readLocalDraft() {
+  try {
+    const raw = window.localStorage.getItem(localDraftKey);
+    return raw ? JSON.parse(raw) as ReturnType<typeof getFormSnapshot> : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalDraft() {
+  try {
+    const snapshot = getFormSnapshot();
+    if (!hasMeaningfulDraft(snapshot)) {
+      window.localStorage.removeItem(localDraftKey);
+      return;
+    }
+    window.localStorage.setItem(localDraftKey, JSON.stringify(snapshot));
+  } catch {
+    setDebug("本地草稿保存失败，浏览器可能禁用了 localStorage。");
+  }
+}
+
+function clearLocalDraft() {
+  try {
+    window.localStorage.removeItem(localDraftKey);
+  } catch {
+    // Ignore localStorage cleanup failures.
+  }
+  if (localDraftPanel) localDraftPanel.hidden = true;
+}
+
+function showLocalDraftPrompt() {
+  const snapshot = readLocalDraft();
+  if (!snapshot || !hasMeaningfulDraft(snapshot) || !localDraftPanel) return;
+
+  const savedAt = new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(snapshot.savedAt));
+  if (localDraftMessage) localDraftMessage.textContent = `发现 ${savedAt} 保存的浏览器本地草稿。`;
+  localDraftPanel.hidden = false;
+}
+
 function getMarkdownSnippet(action: string, selection: string) {
   const selected = selection || "";
   const inline = selected.trim() || "文字";
@@ -144,6 +228,7 @@ function insertMarkdown(action: string) {
   textarea.focus();
   textarea.setSelectionRange(cursor, cursor);
   updatePreview();
+  writeLocalDraft();
   setDebug(`已插入 Markdown 片段：${action}。`);
 }
 
@@ -287,9 +372,23 @@ async function ensureSession({ redirect = true } = {}) {
   return true;
 }
 
-form?.addEventListener("input", updatePreview);
+form?.addEventListener("input", () => {
+  updatePreview();
+  writeLocalDraft();
+});
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
   button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
+});
+restoreDraftButton?.addEventListener("click", () => {
+  const snapshot = readLocalDraft();
+  if (!snapshot) return;
+  applySnapshot(snapshot);
+  if (localDraftPanel) localDraftPanel.hidden = true;
+  setMessage("已恢复浏览器本地草稿，保存前不会写入 Supabase。", "success");
+});
+discardDraftButton?.addEventListener("click", () => {
+  clearLocalDraft();
+  setMessage("已丢弃浏览器本地草稿。", "success");
 });
 saveButton?.addEventListener("click", () => {
   setMessage("已点击保存按钮，正在提交表单...");
@@ -386,6 +485,7 @@ form?.addEventListener("submit", async (event) => {
     const slugMessage = slug === requestedSlug ? "" : `Slug 已自动改为 ${slug}。`;
     setMessage(`${slugMessage}${publishMessage}`, "success");
     setDebug(`Supabase 写入成功，id=${data?.id ?? postId ?? "unknown"}。`);
+    clearLocalDraft();
     currentPost = data as AdminPost;
     if (!postId && data?.id) {
       postId = data.id;
@@ -420,6 +520,7 @@ async function initEditor() {
       setMessage("文章已载入。", "success");
     }
   }
+  showLocalDraftPrompt();
 }
 
 void initEditor();
@@ -435,5 +536,6 @@ document.querySelector<HTMLButtonElement>("[data-admin-delete]")?.addEventListen
     setMessage(error.message, "error");
     return;
   }
+  clearLocalDraft();
   window.location.assign("/admin/");
 });

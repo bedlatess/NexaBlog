@@ -770,6 +770,23 @@ h3 {
   color: var(--color-text);
 }
 
+.admin-local-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid color-mix(in srgb, #d97706 38%, var(--color-border));
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, #d97706 8%, var(--color-bg));
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.admin-local-draft[hidden] {
+  display: none;
+}
+
 .danger-action {
   border-color: color-mix(in srgb, #dc2626 42%, var(--color-border));
   color: #dc2626;
@@ -963,7 +980,8 @@ h3 {
   }
 
   .admin-row,
-  .admin-empty-row {
+  .admin-empty-row,
+  .admin-local-draft {
     align-items: stretch;
     flex-direction: column;
   }
