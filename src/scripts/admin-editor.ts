@@ -15,6 +15,10 @@ const restoreDraftButton = document.querySelector<HTMLButtonElement>("[data-admi
 const discardDraftButton = document.querySelector<HTMLButtonElement>("[data-admin-discard-draft]");
 const preflightPanel = document.querySelector<HTMLElement>("[data-admin-preflight]");
 const preflightList = document.querySelector<HTMLElement>("[data-admin-preflight-list]");
+const deployStatusPanel = document.querySelector<HTMLElement>("[data-admin-deploy-status]");
+const deployStatusTitle = document.querySelector<HTMLElement>("[data-admin-deploy-title]");
+const deployStatusDetail = document.querySelector<HTMLElement>("[data-admin-deploy-detail]");
+const deployStatusLink = document.querySelector<HTMLAnchorElement>("[data-admin-deploy-view]");
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 const params = new URLSearchParams(window.location.search);
@@ -81,6 +85,34 @@ function updatePublishedActions(post: AdminPost | null) {
   if (unpublishButton) {
     unpublishButton.hidden = !isPublished;
   }
+}
+
+function setDeployStatus(kind: "published" | "unpublished", slug: string) {
+  if (!deployStatusPanel) return;
+
+  const postPath = getPublicPostUrl(slug);
+  deployStatusPanel.hidden = false;
+  deployStatusPanel.dataset.status = kind;
+
+  if (deployStatusTitle) {
+    deployStatusTitle.textContent = kind === "published"
+      ? "已写入 Supabase，等待 Vercel 构建"
+      : "已改为草稿，等待前台移除";
+  }
+  if (deployStatusDetail) {
+    deployStatusDetail.textContent = kind === "published"
+      ? "通常 30 秒到 2 分钟后前台会更新。若打开仍是 404，稍等再刷新即可。"
+      : "数据库已经下线这篇文章。前台会在下一次部署完成后不再展示它。";
+  }
+  if (deployStatusLink) {
+    deployStatusLink.hidden = false;
+    deployStatusLink.textContent = kind === "published" ? "打开前台" : "检查原前台地址";
+    deployStatusLink.href = postPath;
+  }
+}
+
+function clearDeployStatus() {
+  if (deployStatusPanel) deployStatusPanel.hidden = true;
 }
 
 function escapeHtml(value: unknown) {
@@ -475,6 +507,7 @@ form?.addEventListener("input", () => {
   updatePreview();
   updatePreflight();
   writeLocalDraft();
+  clearDeployStatus();
 });
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
   button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
@@ -570,6 +603,7 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const isDraft = fields.draft?.checked ?? true;
+    const wasPublishedBefore = Boolean(currentPost && !currentPost.draft && currentPost.published_at);
     const preflightErrors = getBlockingPreflightErrors();
     if (!isDraft && preflightErrors.length) {
       setMessage(`发布前检查未通过：${preflightErrors.map((item) => item.text).join("；")}`, "error");
@@ -619,6 +653,13 @@ form?.addEventListener("submit", async (event) => {
     clearLocalDraft();
     currentPost = data as AdminPost;
     updatePublishedActions(currentPost);
+    if (!isDraft) {
+      setDeployStatus("published", slug);
+    } else if (wasPublishedBefore) {
+      setDeployStatus("unpublished", slug);
+    } else {
+      clearDeployStatus();
+    }
     if (!postId && data?.id) {
       postId = data.id;
       window.history.replaceState({}, "", `/admin/posts/edit/?id=${encodeURIComponent(data.id)}`);

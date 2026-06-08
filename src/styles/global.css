@@ -816,6 +816,37 @@ h3 {
   color: var(--color-text);
 }
 
+.admin-deploy-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid color-mix(in srgb, #059669 38%, var(--color-border));
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, #059669 8%, var(--color-bg));
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.admin-deploy-status[hidden] {
+  display: none;
+}
+
+.admin-deploy-status[data-status="unpublished"] {
+  border-color: color-mix(in srgb, #d97706 45%, var(--color-border));
+  background: color-mix(in srgb, #d97706 8%, var(--color-bg));
+}
+
+.admin-deploy-status strong,
+.admin-deploy-status small {
+  display: block;
+}
+
+.admin-deploy-status strong {
+  color: var(--color-text);
+}
+
 .admin-preflight {
   display: grid;
   gap: var(--space-2);
@@ -1078,7 +1109,8 @@ h3 {
 
   .admin-row,
   .admin-empty-row,
-  .admin-local-draft {
+  .admin-local-draft,
+  .admin-deploy-status {
     align-items: stretch;
     flex-direction: column;
   }
