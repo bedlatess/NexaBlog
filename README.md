@@ -45,7 +45,7 @@ Still reserved for a later pass:
 
 - `/admin/` shows static build status plus live Supabase post management.
 - Giscus, Plausible, Supabase, and donation channels are controlled by public environment variables.
-- Article pages automatically show configured donation methods and load Giscus when ready.
+- Article pages automatically show configured donation methods and load Giscus when ready; unconfigured integrations stay hidden from readers and are surfaced in `/admin/`.
 - `/admin/login/`, `/admin/posts/new/`, and `/admin/posts/edit/?id=...` provide Supabase-backed article CRUD.
 - `supabase/schema.sql` contains the first posts/settings schema and RLS policies.
 - `npm run sync:supabase` pulls published Supabase posts into `src/content/blog/generated/`.

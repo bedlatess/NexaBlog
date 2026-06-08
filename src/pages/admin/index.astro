@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { getAllTags, getPublishedPosts, formatDate, postUrl } from "@/lib/content";
-import { integrations, donationMethods } from "@/data/integrations";
+import { integrations, donationMethods, integrationSetup, integrationStatus } from "@/data/integrations";
 import { deployment } from "@/data/deployment";
 
 const posts = await getPublishedPosts();
@@ -17,7 +17,9 @@ const checks = [
   {
     label: "Giscus",
     status: integrations.giscus.enabled ? "已启用" : "待配置",
-    detail: integrations.giscus.enabled ? integrations.giscus.repo : "填写 GitHub Discussions 参数"
+    detail: integrations.giscus.enabled
+      ? integrations.giscus.repo
+      : `缺少：${integrationStatus.giscusMissing.join("、")}`
   },
   {
     label: "Plausible",
@@ -27,7 +29,9 @@ const checks = [
   {
     label: "打赏",
     status: donationMethods.length ? "已配置" : "待配置",
-    detail: donationMethods.length ? `${donationMethods.length} 个渠道` : "填写 PUBLIC_DONATE_* 变量"
+    detail: donationMethods.length
+      ? `已启用：${integrationStatus.donationConfigured.join("、")}`
+      : `可选渠道：${integrationStatus.donationAvailable.join("、")}`
   }
 ];
 ---
@@ -163,12 +167,49 @@ const checks = [
     </section>
 
     <section class="quiet-panel">
+      <p class="eyebrow">Setup</p>
+      <h2>集成配置清单</h2>
+      <p class="meta">这些都是公开环境变量，只控制前台增强功能是否显示。填完后重新部署即可生效。</p>
+      <div class="integration-setup-grid">
+        {integrationSetup.map((group) => (
+          <div class="integration-setup-card">
+            <div class="admin-row-actions" style="justify-content: space-between">
+              <strong>{group.label}</strong>
+              <span class={`status-pill ${group.status === "待配置" ? "is-muted" : ""}`}>{group.status}</span>
+            </div>
+            <p class="meta">{group.summary}</p>
+            {group.required.length > 0 && (
+              <>
+                <small class="label">必填</small>
+                <div class="config-chip-list">
+                  {group.required.map((item) => (
+                    <code class={group.missing.includes(item) ? "is-missing" : ""}>{item}</code>
+                  ))}
+                </div>
+              </>
+            )}
+            {group.optional.length > 0 && (
+              <>
+                <small class="label">可选</small>
+                <div class="config-chip-list">
+                  {group.optional.map((item) => (
+                    <code>{item}</code>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="quiet-panel">
       <p class="eyebrow">Next</p>
       <h2>下一步打磨方向</h2>
       <ol class="admin-steps">
         <li>补充更顺手的 Markdown 工具栏和图片上传流程。</li>
-        <li>接入 Giscus、Plausible 和打赏渠道。</li>
         <li>增加数据库备份和发布失败告警。</li>
+        <li>把集成配置做成后台表单，减少手动改环境变量。</li>
         <li>把后台设置页接入站点配置、友链和关于页。</li>
       </ol>
     </section>

@@ -37,7 +37,7 @@ Create or select a GitHub repository with Discussions enabled, then fill:
 - `PUBLIC_GISCUS_CATEGORY`
 - `PUBLIC_GISCUS_CATEGORY_ID`
 
-The article page automatically loads Giscus when all required values are present.
+The article page automatically loads Giscus when all required values are present. If Giscus is not configured, the public article page stays quiet and does not show an admin-facing placeholder.
 
 ## Plausible
 
@@ -52,7 +52,7 @@ PUBLIC_DONATE_PAYPAL_LABEL=PayPal
 PUBLIC_DONATE_PAYPAL_URL=https://paypal.me/example
 ```
 
-Channels without a label or URL are hidden.
+Channels without a label or URL are hidden. If no donation channel and no comment integration are configured, the entire article integration block is hidden from readers.
 
 ## Supabase Admin Roadmap
 
