@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { site } from "@/data/site";
 ---
 
-<BaseLayout title="搜索 - NexaBlog" description="搜索 NexaBlog 的文章标题、摘要和标签。">
+<BaseLayout title={`搜索 - ${site.name}`} description={`搜索 ${site.name} 的文章标题、摘要和标签。`}>
   <section class="narrow">
     <p class="eyebrow">Search</p>
     <h1>搜索文章</h1>

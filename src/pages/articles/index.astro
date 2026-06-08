@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ArticleCard from "@/components/ArticleCard.astro";
 import { getPublishedPosts } from "@/lib/content";
+import { site } from "@/data/site";
 
 const posts = await getPublishedPosts();
 
@@ -14,7 +15,7 @@ const grouped = posts.reduce<Record<number, typeof posts>>((acc, post) => {
 const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
 ---
 
-<BaseLayout title="全部文章 - NexaBlog" description="NexaBlog 的文章归档。">
+<BaseLayout title={`全部文章 - ${site.name}`} description={`${site.name} 的文章归档。`}>
   <section class="container">
     <p class="eyebrow">Archive</p>
     <h1>全部文章</h1>

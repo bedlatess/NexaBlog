@@ -3,6 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import ArticleCard from "@/components/ArticleCard.astro";
 import { getAllTags, getPublishedPosts } from "@/lib/content";
 import { tagSlug } from "@/lib/tags";
+import { site } from "@/data/site";
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
@@ -20,7 +21,7 @@ const taggedPosts = posts.filter((post) =>
 );
 ---
 
-<BaseLayout title={`#${currentTag} - NexaBlog`} description={`浏览标签 ${currentTag} 下的文章。`}>
+<BaseLayout title={`#${currentTag} - ${site.name}`} description={`浏览标签 ${currentTag} 下的文章。`}>
   <section class="container">
     <p class="eyebrow">Tag</p>
     <h1>#{currentTag}</h1>
