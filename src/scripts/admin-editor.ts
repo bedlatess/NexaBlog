@@ -102,6 +102,51 @@ function trimmedFieldValue(field: HTMLInputElement | HTMLTextAreaElement | null)
   return fieldValue(field).trim();
 }
 
+function getMarkdownSnippet(action: string, selection: string) {
+  const selected = selection || "";
+  const inline = selected.trim() || "文字";
+  const block = selected.trim() || "正文";
+
+  const snippets: Record<string, string> = {
+    heading: `## ${inline}`,
+    bold: `**${inline}**`,
+    link: `[${inline}](https://example.com)`,
+    quote: selected
+      ? selected.split("\n").map((line) => `> ${line}`).join("\n")
+      : `> ${block}`,
+    list: selected
+      ? selected.split("\n").map((line) => `- ${line || "列表项"}`).join("\n")
+      : "- 列表项",
+    code: selected.includes("\n")
+      ? `\`\`\`\n${selected}\n\`\`\``
+      : `\`${inline}\``,
+    image: `![图片描述](https://example.com/image.jpg)`
+  };
+
+  return snippets[action] ?? selected;
+}
+
+function insertMarkdown(action: string) {
+  const textarea = fields.body;
+  if (!textarea) return;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const value = textarea.value;
+  const selection = value.slice(start, end);
+  const snippet = getMarkdownSnippet(action, selection);
+  const needsLeadingBreak = start > 0 && value[start - 1] !== "\n" && /^(## |>|- |```)/.test(snippet);
+  const prefix = needsLeadingBreak ? "\n" : "";
+  const nextValue = `${value.slice(0, start)}${prefix}${snippet}${value.slice(end)}`;
+  const cursor = start + prefix.length + snippet.length;
+
+  textarea.value = nextValue;
+  textarea.focus();
+  textarea.setSelectionRange(cursor, cursor);
+  updatePreview();
+  setDebug(`已插入 Markdown 片段：${action}。`);
+}
+
 function updatePreview() {
   if (!preview) return;
   preview.innerHTML = `
@@ -150,6 +195,9 @@ async function ensureSession({ redirect = true } = {}) {
 }
 
 form?.addEventListener("input", updatePreview);
+document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
+  button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
+});
 saveButton?.addEventListener("click", () => {
   setMessage("已点击保存按钮，正在提交表单...");
   setDebug("保存按钮 click 已被主编辑模块捕获。");

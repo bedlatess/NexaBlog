@@ -672,6 +672,31 @@ h3 {
   border-color: var(--color-accent);
 }
 
+.admin-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.toolbar-button {
+  min-height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  background: color-mix(in srgb, var(--color-bg-secondary) 82%, transparent);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  transition: border-color 200ms ease-in-out, color 200ms ease-in-out, background 200ms ease-in-out;
+}
+
+.toolbar-button:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-bg));
+  color: var(--color-text);
+}
+
 .admin-textarea {
   min-height: 360px;
   padding-block: var(--space-3);
