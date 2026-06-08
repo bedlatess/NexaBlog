@@ -705,6 +705,36 @@ h3 {
   padding-top: var(--space-4);
 }
 
+.admin-live-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.admin-live-stats span {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--color-bg-secondary) 76%, transparent);
+}
+
+.admin-live-stats small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.admin-live-stats strong {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
 .admin-form {
   display: grid;
   gap: var(--space-4);
@@ -1046,6 +1076,10 @@ h3 {
   .admin-local-draft {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-live-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-row-actions {

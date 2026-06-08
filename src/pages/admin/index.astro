@@ -112,6 +112,24 @@ const checks = [
           <button type="button" data-admin-post-status="draft">草稿</button>
         </div>
       </div>
+      <div class="admin-live-stats" aria-label="Supabase 实时文章统计">
+        <span>
+          <small>总数</small>
+          <strong data-admin-live-count="total">-</strong>
+        </span>
+        <span>
+          <small>已发布</small>
+          <strong data-admin-live-count="published">-</strong>
+        </span>
+        <span>
+          <small>草稿</small>
+          <strong data-admin-live-count="draft">-</strong>
+        </span>
+        <span>
+          <small>最近更新</small>
+          <strong data-admin-live-count="latest">-</strong>
+        </span>
+      </div>
       <div class="admin-list" data-admin-live-posts>
         <div class="admin-row">
           <span>

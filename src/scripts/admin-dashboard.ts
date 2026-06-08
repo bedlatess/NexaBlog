@@ -7,6 +7,12 @@ const message = document.querySelector<HTMLElement>("[data-admin-live-message]")
 const logoutButton = document.querySelector<HTMLButtonElement>("[data-admin-logout]");
 const searchInput = document.querySelector<HTMLInputElement>("[data-admin-post-search]");
 const statusButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-admin-post-status]"));
+const liveCounts = {
+  total: document.querySelector<HTMLElement>("[data-admin-live-count='total']"),
+  published: document.querySelector<HTMLElement>("[data-admin-live-count='published']"),
+  draft: document.querySelector<HTMLElement>("[data-admin-live-count='draft']"),
+  latest: document.querySelector<HTMLElement>("[data-admin-live-count='latest']")
+};
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 let allPosts: AdminPost[] = [];
@@ -69,6 +75,17 @@ function renderPosts(posts: AdminPost[]) {
   `).join("");
 }
 
+function updateLiveCounts() {
+  const publishedCount = allPosts.filter((post) => !post.draft).length;
+  const draftCount = allPosts.length - publishedCount;
+  const latestUpdatedAt = allPosts[0]?.updated_at ?? null;
+
+  if (liveCounts.total) liveCounts.total.textContent = String(allPosts.length);
+  if (liveCounts.published) liveCounts.published.textContent = String(publishedCount);
+  if (liveCounts.draft) liveCounts.draft.textContent = String(draftCount);
+  if (liveCounts.latest) liveCounts.latest.textContent = formatDateTime(latestUpdatedAt);
+}
+
 function filterPosts() {
   const query = searchInput?.value.trim().toLowerCase() ?? "";
   const filtered = allPosts.filter((post) => {
@@ -86,9 +103,11 @@ function filterPosts() {
     return matchesStatus && (!query || haystack.includes(query));
   });
 
+  updateLiveCounts();
   renderPosts(filtered);
   const publishedCount = allPosts.filter((post) => !post.draft).length;
-  setMessage(`Supabase 文章：${filtered.length}/${allPosts.length} 篇匹配，已发布 ${publishedCount} 篇。`, "success");
+  const draftCount = allPosts.length - publishedCount;
+  setMessage(`Supabase 文章：${filtered.length}/${allPosts.length} 篇匹配，已发布 ${publishedCount} 篇，草稿 ${draftCount} 篇。`, "success");
 }
 
 function setActiveStatus(status: string) {
