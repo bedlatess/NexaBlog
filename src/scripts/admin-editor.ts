@@ -671,6 +671,18 @@ copyImageButton?.addEventListener("click", async () => {
     setImageMessage(`无法自动复制，请手动复制：${snippet}`, "error");
   }
 });
+window.addEventListener("beforeunload", (event) => {
+  if (!hasUnsavedChanges) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+window.addEventListener("keydown", (event) => {
+  if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
+  event.preventDefault();
+  setMessage("已触发快捷保存，正在提交表单...");
+  setDebug("Ctrl/Cmd+S 快捷保存已触发。");
+  form?.requestSubmit();
+});
 restoreDraftButton?.addEventListener("click", () => {
   const snapshot = readLocalDraft();
   if (!snapshot) return;
