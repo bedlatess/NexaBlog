@@ -24,12 +24,19 @@ const imageAltInput = document.querySelector<HTMLInputElement>("[data-admin-imag
 const insertImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-insert]");
 const copyImageButton = document.querySelector<HTMLButtonElement>("[data-admin-image-copy]");
 const imageMessage = document.querySelector<HTMLElement>("[data-admin-image-message]");
+const editorMetrics = {
+  chars: document.querySelector<HTMLElement>("[data-admin-metric='chars']"),
+  reading: document.querySelector<HTMLElement>("[data-admin-metric='reading']"),
+  images: document.querySelector<HTMLElement>("[data-admin-metric='images']"),
+  saved: document.querySelector<HTMLElement>("[data-admin-metric='saved']")
+};
 const config = getSupabaseConfig();
 const supabase = createBrowserSupabase();
 const params = new URLSearchParams(window.location.search);
 let postId = params.get("id");
 let currentPost: AdminPost | null = null;
 let sessionReady = false;
+let hasUnsavedChanges = false;
 const editorVersion = "admin-editor-2026-06-07-2148";
 const localDraftKey = `nexablog:admin-draft:${postId ?? "new"}`;
 
@@ -91,6 +98,37 @@ function getImageMarkdown() {
     return null;
   }
   return `![${alt}](${src})`;
+}
+
+function countImages(markdown: string) {
+  return Array.from(markdown.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)).length;
+}
+
+function updateEditorMetrics() {
+  const body = fieldValue(fields.body).trim();
+  const charCount = body.length;
+  const readingMinutes = Math.max(1, Math.ceil(charCount / 500));
+  const imageCount = countImages(body);
+  const savedLabel = hasUnsavedChanges
+    ? "有未保存修改"
+    : currentPost
+      ? currentPost.draft ? "草稿已保存" : "已发布"
+      : "未保存";
+
+  if (editorMetrics.chars) editorMetrics.chars.textContent = String(charCount);
+  if (editorMetrics.reading) editorMetrics.reading.textContent = `${readingMinutes} 分钟`;
+  if (editorMetrics.images) editorMetrics.images.textContent = `${imageCount} 张`;
+  if (editorMetrics.saved) editorMetrics.saved.textContent = savedLabel;
+}
+
+function markEditorDirty() {
+  hasUnsavedChanges = true;
+  updateEditorMetrics();
+}
+
+function markEditorSaved() {
+  hasUnsavedChanges = false;
+  updateEditorMetrics();
 }
 
 function setSaving(saving: boolean) {
@@ -241,6 +279,7 @@ function applySnapshot(snapshot: ReturnType<typeof getFormSnapshot>) {
   if (fields.draft) fields.draft.checked = snapshot.draft;
   if (fields.featured) fields.featured.checked = snapshot.featured;
   updatePreview();
+  markEditorDirty();
 }
 
 function readLocalDraft() {
@@ -408,6 +447,7 @@ function insertMarkdown(action: string) {
   updatePreview();
   updatePreflight();
   writeLocalDraft();
+  markEditorDirty();
   setDebug(`已插入 Markdown 片段：${action}。`);
 }
 
@@ -430,6 +470,7 @@ function insertMarkdownSnippet(snippet: string) {
   updatePreflight();
   writeLocalDraft();
   clearDeployStatus();
+  markEditorDirty();
 }
 
 function renderInlineMarkdown(value: string) {
@@ -571,9 +612,11 @@ function fill(post: AdminPost) {
   if (fields.body) fields.body.value = post.body;
   if (fields.draft) fields.draft.checked = post.draft;
   if (fields.featured) fields.featured.checked = post.featured;
+  hasUnsavedChanges = false;
   updatePreview();
   updatePreflight();
   updatePublishedActions(post);
+  updateEditorMetrics();
 }
 
 async function ensureSession({ redirect = true } = {}) {
@@ -606,6 +649,7 @@ form?.addEventListener("input", () => {
   updatePreflight();
   writeLocalDraft();
   clearDeployStatus();
+  markEditorDirty();
 });
 document.querySelectorAll<HTMLButtonElement>("[data-markdown-insert]").forEach((button) => {
   button.addEventListener("click", () => insertMarkdown(button.dataset.markdownInsert ?? ""));
@@ -768,6 +812,7 @@ form?.addEventListener("submit", async (event) => {
     clearLocalDraft();
     currentPost = data as AdminPost;
     updatePublishedActions(currentPost);
+    markEditorSaved();
     if (!isDraft) {
       setDeployStatus("published", slug);
     } else if (wasPublishedBefore) {
@@ -793,6 +838,7 @@ async function initEditor() {
   setMessage("编辑器脚本已加载，正在检查 Supabase 会话...");
   updatePreview();
   updatePreflight();
+  updateEditorMetrics();
 
   if (!(await ensureSession())) return;
 

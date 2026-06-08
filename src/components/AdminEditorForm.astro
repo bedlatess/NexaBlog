@@ -55,6 +55,24 @@ const { mode } = Astro.props;
         <p class="meta" data-admin-image-message>建议使用 https 图片地址，或把图片放到站内 /assets/ 后引用。</p>
       </div>
       <textarea class="admin-input admin-textarea" name="body" placeholder="## 从这里开始"></textarea>
+      <div class="admin-editor-metrics" aria-label="写作状态">
+        <span>
+          <small>正文字符</small>
+          <strong data-admin-metric="chars">0</strong>
+        </span>
+        <span>
+          <small>预计阅读</small>
+          <strong data-admin-metric="reading">1 分钟</strong>
+        </span>
+        <span>
+          <small>图片</small>
+          <strong data-admin-metric="images">0 张</strong>
+        </span>
+        <span>
+          <small>保存状态</small>
+          <strong data-admin-metric="saved">未保存</strong>
+        </span>
+      </div>
     </label>
     <div class="admin-checks">
       <label class="admin-check">
