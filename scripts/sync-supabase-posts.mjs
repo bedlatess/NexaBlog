@@ -41,6 +41,7 @@ function normalizeBody(body) {
 function toMarkdown(post) {
   const published = post.published_at ? new Date(post.published_at) : new Date();
   const updated = post.updated_at ? new Date(post.updated_at) : published;
+  const coverImage = post.cover_image ? `  image: ${yamlString(post.cover_image)}\n` : "";
   return `---\n` +
     `title: ${yamlString(post.title)}\n` +
     `description: ${yamlString(post.description)}\n` +
@@ -53,6 +54,7 @@ function toMarkdown(post) {
     `  label: ${yamlString("Supabase")}\n` +
     `  signal: ${yamlString("Live Content")}\n` +
     `  tone: "green"\n` +
+    coverImage +
     `---\n\n` +
     `${marker}\n\n` +
     `${normalizeBody(post.body)}\n`;

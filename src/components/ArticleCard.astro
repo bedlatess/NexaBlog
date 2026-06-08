@@ -7,15 +7,21 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const cover = post.data.cover ?? { label: "Article", signal: "Nexa", tone: "blue" };
+const cover = post.data.cover ?? { label: "Article", signal: "Nexa", tone: "blue" as const };
 ---
 
 <a class="article-card" href={postUrl(post)}>
   <div>
-    <div class="signal-card quiet-panel" data-tone={cover.tone}>
-      <span class="signal">{cover.signal}</span>
-      <strong class="signal-title">{cover.label}</strong>
-    </div>
+    {cover.image ? (
+      <div class="cover-image">
+        <img src={cover.image} alt={cover.label} loading="lazy" decoding="async" />
+      </div>
+    ) : (
+      <div class="signal-card quiet-panel" data-tone={cover.tone}>
+        <span class="signal">{cover.signal}</span>
+        <strong class="signal-title">{cover.label}</strong>
+      </div>
+    )}
     <h3>{post.data.title}</h3>
     <p>{post.data.description}</p>
   </div>

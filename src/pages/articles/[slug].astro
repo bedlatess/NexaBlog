@@ -36,7 +36,11 @@ const jsonLd = {
 };
 ---
 
-<BaseLayout title={`${post.data.title} - ${site.name}`} description={post.data.description}>
+<BaseLayout
+  title={`${post.data.title} - ${site.name}`}
+  description={post.data.description}
+  image={post.data.cover?.image}
+>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
   <meta property="og:type" content="article" slot="head" />
   <meta property="article:published_time" content={post.data.published.toISOString()} slot="head" />
@@ -48,6 +52,11 @@ const jsonLd = {
     <article>
       <header class="article-header">
         <p class="eyebrow">Article</p>
+        {post.data.cover?.image && (
+          <div class="article-cover-image">
+            <img src={post.data.cover.image} alt={post.data.cover.label ?? post.data.title} loading="eager" decoding="async" />
+          </div>
+        )}
         <h1>{post.data.title}</h1>
         <p class="article-description">{post.data.description}</p>
         <p class="meta">

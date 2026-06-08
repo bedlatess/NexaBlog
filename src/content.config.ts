@@ -19,7 +19,8 @@ const blog = defineCollection({
       .object({
         label: z.string(),
         signal: z.string(),
-        tone: z.enum(["blue", "ink", "green", "amber"]).default("blue")
+        tone: z.enum(["blue", "ink", "green", "amber"]).default("blue"),
+        image: z.string().optional()
       })
       .optional()
   })
